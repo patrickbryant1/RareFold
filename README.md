@@ -51,6 +51,15 @@ conda activate rarefold
 bash predict.sh
 ```
 
+## Running Custom Predictions
+For running new predictions with your own data, a wrapper script `run_rarefold_predict.sh` is provided which accepts command-line arguments.
+
+To see all available options and their defaults, run:
+```bash
+conda activate rarefold
+./run_rarefold_predict.sh --help
+```
+
 
 # Design using EvoBindRare
 ## Design linear or cyclic peptide binders incorporating noncanonical amino acids
