@@ -4,7 +4,7 @@ ID=1ssc
 DATADIR=$BASE/data/design_test_case/$ID
 REC_MSA=$DATADIR/$ID'_receptor.a3m'
 REC_FASTA=$DATADIR/$ID'_receptor.fasta'
-MAX_RECYCLES=3 #max_recycles (default=3)
+MAX_RECYCLES=8 #max_recycles (default=3)
 BINDER_LENGTH=10
 NITER=1000
 RESAMPLE_FREQ=100 #How often to resample the MSA
