@@ -82,6 +82,6 @@ Li Q, Daumiller D, Bryant P. RareFold: Structure prediction and design of protei
 [link to paper](https://www.biorxiv.org/content/10.1101/2025.05.19.654846v1)
 
 # Data
-https://zenodo.org/records/15818951
+https://zenodo.org/records/17071355
 
 Unfortunately the entire train data with MSAs is too large to share through zenodo. This repo mainly contains predictions and metrics.

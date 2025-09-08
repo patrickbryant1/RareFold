@@ -9,7 +9,7 @@ conda deactivate
 
 ## Get network parameters for RareFold (a few minutes)
 #RareFold
-ZENODO=https://zenodo.org/records/14892196/files
+ZENODO=https://zenodo.org/records/17071355/files
 wget $ZENODO/params20000.npy
 mkdir data/params
 mv params20000.npy  data/params/
