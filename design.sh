@@ -2,8 +2,20 @@
 BASE=. #Change this depending on your local path
 ID=1ssc
 DATADIR=$BASE/data/design_test_case/$ID
-REC_MSA=$DATADIR/$ID'_receptor.a3m'
 REC_FASTA=$DATADIR/$ID'_receptor.fasta'
+HHBLITSDB=$BASE/data/uniclust30_2018_08/uniclust30_2018_08
+
+#########Step1: Create MSA with HHblits#########
+#MSA
+REC_MSA=$DATADIR/$ID'_receptor.a3m'
+if test -f $REC_MSA; then
+	echo $REC_MSA exists
+else
+	$BASE/hh-suite/build/bin/hhblits -i $REC_FASTA -d $HHBLITSDB -E 0.001 -all -n 2 -oa3m $REC_MSA
+fi
+
+
+#############PARAMS FOR DESIGN#############
 MAX_RECYCLES=8 #max_recycles (default=3)
 BINDER_LENGTH=10
 NITER=1000
@@ -24,8 +36,7 @@ CYCLIC=True #Set to False if you want to design linear binders
 SAVE_BEST_ONLY=True #If to only save improved designs (save space+speed) or all
 OUTDIR=$DATADIR/
 
-
-#######First make MSA features#######
+#######Step2: Make MSA features#######
 MSA_FEATS=$OUTDIR/msa_features.pkl
 if test -f $MSA_FEATS; then
 	echo $MSA_FEATS exists
@@ -35,7 +46,7 @@ else
 fi
 
 
-#######Then design#######
+#######Step3: Design#######
 #All metrics will be saved to "metrics.csv" in outdir
 #If the run stops for some reason - don't worry - it will continue where it left off
 python3 $BASE/src/mc_design_improved.py --predict_id $ID \
