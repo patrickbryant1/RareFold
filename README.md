@@ -79,7 +79,7 @@ bash design.sh
 If you use RareFold in your research, please cite
 
 Li Q, Daumiller D, Zuo F, Marcotte H, Pan-Hammarstrom Q and Bryant P. RareFold: Structure prediction and design of proteins with noncanonical amino acids. bioRxiv. 2025. p. 2025.05.19.654846. doi:10.1101/2025.05.19.654846
-[link to paper](https://www.biorxiv.org/content/10.1101/2025.05.19.654846v2)
+[link to paper](https://www.biorxiv.org/content/10.1101/2025.05.19.654846v2.full)
 
 # Data
 https://zenodo.org/records/17071355
