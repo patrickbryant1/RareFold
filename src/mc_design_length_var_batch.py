@@ -58,6 +58,7 @@ parser.add_argument('--params', nargs=1, type= str, default=sys.stdin, help = 'P
 parser.add_argument('--rare_AAs', nargs=1, type= str, default=sys.stdin, help = 'List of rare amino acids to use in the design.')
 parser.add_argument('--cyclic_offset', nargs=1, type= str, default=sys.stdin, help = 'Use a cyclic offset for the binder (True) or not (False).')
 parser.add_argument('--save_best_only', nargs=1, type= str, default=sys.stdin, help = 'Save only design improvements (True), otherwise save all.')
+parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help = 'Number of CPU threads.')
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 ##############FUNCTIONS##############
@@ -426,6 +427,7 @@ def design_binder(config,
                 params=None,
                 rare_AAs=['MSE'],
                 save_best_only='True',
+                max_workers=max_workers,
                 outdir=None):
     """Design a binder
     """
@@ -522,7 +524,8 @@ def design_binder(config,
         print("--- Running init_features in parallel ---")
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
-                                constant_args=(MSA_feats, config))
+                                constant_args=(MSA_feats, config),
+                                max_workers=max_workers)
         batch = {}
         for key in init_feature_dicts[0]:
             batch[key] = np.array([init_feature_dicts[x][key] for x in range(batch_size)])
@@ -538,7 +541,8 @@ def design_binder(config,
         print("--- Running init_features in parallel ---")
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
-                                constant_args=(MSA_feats, config))
+                                constant_args=(MSA_feats, config),
+                                max_workers=max_workers)
         pdb.set_trace()
 
         #Make the batch uniform in length (according to the longest target)
@@ -711,6 +715,7 @@ if cyclic_offset=='True':
 else:
     cyclic_offset=None
 save_best_only = args.save_best_only[0]
+max_workers = args.max_workers[0]
 outdir = args.outdir[0]
 
 
@@ -729,4 +734,5 @@ design_binder(config.CONFIG,
             params=params,
             rare_AAs=rare_AAs,
             save_best_only=save_best_only,
+            max_workers=max_workers,
             outdir=outdir)
