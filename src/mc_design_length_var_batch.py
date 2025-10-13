@@ -131,7 +131,7 @@ def process_input_feats(new_feature_dict, config):
     return batch_ex
 
 
-def init_features(onehot_binder_seq, feature_dict, binder_length, config):
+def init_features(onehot_binder_seq, feature_dict, config):
     """Update the features to include the binder sequence
 
     #From MSA feats
@@ -149,6 +149,8 @@ def init_features(onehot_binder_seq, feature_dict, binder_length, config):
     #Save
     new_feature_dict = {}
 
+    #Binder length
+    binder_length = len(onehot_binder_seq)
     #Add peptide feats to feature dict
     #aatype
     new_feature_dict['int_seq'] = np.concatenate((np.argmax(feature_dict['aatype'],axis=1), np.array(onehot_binder_seq)),axis=0)
@@ -182,10 +184,9 @@ def init_features(onehot_binder_seq, feature_dict, binder_length, config):
 
     #Process
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
-        new_feature_dict['binder_cyclic_offset_array'] = copy.deepcopy(feature_dict['binder_cyclic_offset_array'])
+        new_feature_dict['binder_cyclic_offset_array'] = copy.deepcopy(feature_dict['binder_cyclic_offset_array_'+str(binder_length)])
 
     new_feature_dict = process_input_feats(new_feature_dict, config)
-
 
     return new_feature_dict
 
@@ -440,23 +441,24 @@ def design_binder(config,
     #Initialize weights - these are the amino acid probabilities
     #Also returns the peptide_sequence corresponding to the weights
     init_binder_seqs = [initialize_weights(x, batch_size, all_AA_triplets, selected_AA_index) for x in binder_lengths]
-    #Reformat
+    #Reformat to batch format
     binder_seqs, int_binder_seqs, lengths_in_batch = [], [], []
     for i in range(len(binder_lengths)):
         item = init_binder_seqs[i]
         binder_seqs.extend(item[0])
         int_binder_seqs.extend(item[1])
         lengths_in_batch.extend([binder_lengths[i]]*batch_size)
-    pdb.set_trace()
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
-        cyclic_offset_array = np.zeros((binder_length, binder_length))
-        cyc_row = np.arange(0,-binder_length,-1)
-        pc = int(np.round(binder_length/2)) #Get centre
-        cyc_row[pc+1:]=np.arange(len(cyc_row[pc+1:]),0,-1)
-        for i in range(len(cyclic_offset_array)):
-            cyclic_offset_array[i]=np.roll(cyc_row,i)
-        MSA_feats['binder_cyclic_offset_array']=cyclic_offset_array
+        for binder_length in binder_lengths:
+            cyclic_offset_array = np.zeros((binder_length, binder_length))
+            cyc_row = np.arange(0,-binder_length,-1)
+            pc = int(np.round(binder_length/2)) #Get centre
+            cyc_row[pc+1:]=np.arange(len(cyc_row[pc+1:]),0,-1)
+            for i in range(len(cyclic_offset_array)):
+                cyclic_offset_array[i]=np.roll(cyc_row,i)
+            #Store the cyclic offset array for each binder length
+            MSA_feats['binder_cyclic_offset_array_'+str(binder_length)]=cyclic_offset_array
 
     #Define the forward function
     def _forward_fn(batch):
@@ -489,8 +491,6 @@ def design_binder(config,
         new_params[new_key] = params[key]
     params = new_params
 
-
-
     ####Run the directed evolution####
     sequence_scores = {'iteration':[],
                         'if_dist_binder':[],
@@ -518,8 +518,11 @@ def design_binder(config,
         for i in range(len(best_inds)):
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
 
-        #Load batch
-        init_feature_dicts = [init_features(int_binder_seqs[i], MSA_feats, binder_length, config) for i in range(batch_size)]
+        #Make feature dicts
+        print("--- Running init_features in parallel ---")
+        init_feature_dicts = parallel_map(func=init_features,
+                                iter_args=int_binder_seqs,
+                                constant_args=(MSA_feats, config))
         batch = {}
         for key in init_feature_dicts[0]:
             batch[key] = np.array([init_feature_dicts[x][key] for x in range(batch_size)])
@@ -532,20 +535,16 @@ def design_binder(config,
     else:
         print('No previous run found. Starting new...')
         #Make feature dicts
-
         print("--- Running init_features in parallel ---")
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
-                                constant_args=(MSA_feats, binder_length, config))
+                                constant_args=(MSA_feats, config))
         pdb.set_trace()
 
-        batch = {}
-        for key in init_feature_dicts[0]:
-            batch[key] = np.array([init_feature_dicts[x][key] for x in range(batch_size)])
-            batch[key] = np.reshape(batch[key], (batch_size, 1, *batch[key].shape[1:]))
+        #Make the batch uniform in length (according to the longest target)
+        print('Making batch uniform...')
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, num_recycles, config)
 
-        batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
-        batch['num_iter_recycling'][:] = num_recycles
 
 
         print('Predicting init...')
