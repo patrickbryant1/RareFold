@@ -50,7 +50,7 @@ parser = argparse.ArgumentParser(description = """Design a binder using trained 
 parser.add_argument('--predict_id', nargs=1, type= str, default=sys.stdin, help = 'Id to predict.')
 parser.add_argument('--MSA_feats', nargs=1, type= str, default=sys.stdin, help = 'Id to predict.')
 parser.add_argument('--num_recycles', nargs=1, type= int, default=sys.stdin, help = 'Number of recycles.')
-parser.add_argument('--binder_lengths', nargs=1, type= int, default=sys.stdin, help = 'Length of binders (e.g. 10,11,12,...).')
+parser.add_argument('--binder_lengths', nargs=1, type= str, default=sys.stdin, help = 'Length of binders (e.g. 10,11,12,...).')
 parser.add_argument('--num_iterations', nargs=1, type= int, default=sys.stdin, help = 'Number of iterations to run.')
 parser.add_argument('--resample_every_n', nargs=1, type= int, default=sys.stdin, help = 'How often to resample the MSA - avoids local minima.')
 parser.add_argument('--batch_size', nargs=1, type= int, default=sys.stdin, help = 'Batch size per length (will run design threads in parallel).')
@@ -192,17 +192,11 @@ def init_features(onehot_binder_seq, feature_dict, binder_length, config):
 
 
 ##########MODEL and DESIGN#########
-def initialize_weights(binder_length, rare_AAs, batch_size):
+def initialize_weights(binder_length, batch_size, all_AA_triplets, selected_AA_index):
     '''Initialize sequence probabilities
     '''
 
-    all_AAs = np.array([*residue_constants.restype_name_to_atom14_names.keys()])
-    #Select the ones that are in design AAs
-    selected_AA_index = [x for x in range(20)]
-    for raa in rare_AAs:
-        selected_AA_index.append(np.argwhere(all_AAs==raa)[0][0])
 
-    selected_AA_index = np.sort(np.unique(selected_AA_index))
     num_design_AAs = len(selected_AA_index)
 
     binder_seqs, onehot_binder_seqs = [], []
@@ -212,9 +206,9 @@ def initialize_weights(binder_length, rare_AAs, batch_size):
 
         #Get the peptide sequence
         onehot_binder_seqs.append([selected_AA_index[x] for x in np.argmax(weights,axis=1)])
-        binder_seqs.append('-'.join(all_AAs[onehot_binder_seqs[-1]]))
+        binder_seqs.append('-'.join(all_AA_triplets[onehot_binder_seqs[-1]]))
 
-    return binder_seqs, onehot_binder_seqs, all_AAs, selected_AA_index
+    return binder_seqs, onehot_binder_seqs
 
 
 def mutate_sequence(onehot_binder_seq, searched_seqs, all_AA_triplets, selected_AA_index):
@@ -424,7 +418,7 @@ def design_binder(config,
                 predict_id,
                 MSA_feats,
                 num_recycles=3,
-                binder_length=10,
+                binder_lengths=[10],
                 num_iterations=1000,
                 resample_every_n=100,
                 batch_size=1,
@@ -435,9 +429,25 @@ def design_binder(config,
     """Design a binder
     """
 
+    #Get mappings
+    all_AA_triplets = np.array([*residue_constants.restype_name_to_atom14_names.keys()])
+    #Select the ones that are in design AAs
+    selected_AA_index = [x for x in range(20)]
+    for raa in rare_AAs:
+        selected_AA_index.append(np.argwhere(all_AA_triplets==raa)[0][0])
+    selected_AA_index = np.sort(np.unique(selected_AA_index))
+
     #Initialize weights - these are the amino acid probabilities
     #Also returns the peptide_sequence corresponding to the weights
-    binder_seqs, int_binder_seqs, all_AA_triplets, selected_AA_index = initialize_weights(binder_length, rare_AAs, batch_size)
+    init_binder_seqs = [initialize_weights(x, batch_size, all_AA_triplets, selected_AA_index) for x in binder_lengths]
+    #Reformat
+    binder_seqs, int_binder_seqs, lengths_in_batch = [], [], []
+    for i in range(len(binder_lengths)):
+        item = init_binder_seqs[i]
+        binder_seqs.extend(item[0])
+        int_binder_seqs.extend(item[1])
+        lengths_in_batch.extend([binder_lengths[i]]*batch_size)
+    pdb.set_trace()
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         cyclic_offset_array = np.zeros((binder_length, binder_length))
@@ -690,7 +700,7 @@ args = parser.parse_args()
 predict_id = args.predict_id[0]
 MSA_feats = np.load(args.MSA_feats[0], allow_pickle=True)
 num_recycles = args.num_recycles[0]
-binder_length = args.binder_length[0]
+binder_lengths = [int(x) for x in args.binder_lengths[0].split(',')]
 num_iterations = args.num_iterations[0]
 resample_every_n = args.resample_every_n[0]
 batch_size = args.batch_size[0]
@@ -713,7 +723,7 @@ design_binder(config.CONFIG,
             predict_id,
             MSA_feats,
             num_recycles=num_recycles,
-            binder_length=binder_length,
+            binder_lengths=binder_lengths,
             num_iterations=num_iterations,
             resample_every_n=resample_every_n,
             batch_size=batch_size,
