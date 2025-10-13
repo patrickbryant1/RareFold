@@ -34,6 +34,7 @@ RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threelet
 
 CYCLIC=True #Set to False if you want to design linear binders
 SAVE_BEST_ONLY=False #If to only save improved designs (set True, save space+speed) or all
+MAX_WORKERS=18
 OUTDIR=$DATADIR/
 
 #######Step2: Make MSA features#######
@@ -60,6 +61,7 @@ python3 $BASE/src/mc_design_length_var_batch.py --predict_id $ID \
 --rare_AAs $RARE_AAS \
 --cyclic_offset $CYCLIC \
 --save_best_only $SAVE_BEST_ONLY \
+--max_workers $MAX_WORKERS \
 --outdir $OUTDIR
 
 #The design process can result in clashes - especially in the cyclic case.

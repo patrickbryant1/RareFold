@@ -427,7 +427,7 @@ def design_binder(config,
                 params=None,
                 rare_AAs=['MSE'],
                 save_best_only='True',
-                max_workers=max_workers,
+                max_workers=None,
                 outdir=None):
     """Design a binder
     """
