@@ -506,7 +506,7 @@ def design_binder(config,
 
     #check if previous run exists
     if os.path.exists(outdir+'metrics.csv'):
-        print('Run exists, continuing...')
+        print('--- Run exists, continuing... ---')
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
             if col!='iteration':
@@ -522,29 +522,26 @@ def design_binder(config,
 
         #Make feature dicts
         print("--- Running init_features in parallel ---")
+        t0 = time.time()
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
-        batch = {}
-        for key in init_feature_dicts[0]:
-            batch[key] = np.array([init_feature_dicts[x][key] for x in range(batch_size)])
-            batch[key] = np.reshape(batch[key], (batch_size, 1, *batch[key].shape[1:]))
-
-        batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
-        batch['num_iter_recycling'][:] = num_recycles
+        print('Init feats took',time.time()-t0,'s')
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, num_recycles, config)
 
 
     else:
-        print('No previous run found. Starting new...')
+        print('--- No previous run found. Starting new... ---')
         #Make feature dicts
         print("--- Running init_features in parallel ---")
+        t0 = time.time()
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
         pdb.set_trace()
-
+        print('Init feats took',time.time()-t0,'s')
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, num_recycles, config)
@@ -554,7 +551,7 @@ def design_binder(config,
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
-        print('Init took',time.time()-t0,'s')
+        print('Init pred took',time.time()-t0,'s')
         #Save all init
         t0 = time.time()
         [save_structure(batch, prediction_result, i, 'init', outdir) for i in range(batch_size)]
