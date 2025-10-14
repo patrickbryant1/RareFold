@@ -1,8 +1,4 @@
 import os
-import multiprocessing
-# 🚨 CRITICAL: Use 'spawn' to prevent CUDA context corruption in subprocesses.
-multiprocessing.set_start_method('spawn', force=True)
-
 import pickle
 import random
 import sys
@@ -670,17 +666,16 @@ def design_binder(config,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
 
-        print('Init feats took',time.time()-t0,'s')
+        print('Init feats took',np.round(time.time()-t0,2),'s')
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-        print('Making uniform batch took',time.time()-t0,'s')
+        print('Making uniform batch took',np.round(time.time()-t0,2),'s')
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took',time.time()-t0,'s')
-
 
 
         pdb.set_trace()
