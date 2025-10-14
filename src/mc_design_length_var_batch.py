@@ -1,4 +1,7 @@
 import os
+import multiprocessing
+# 🚨 CRITICAL: Use 'spawn' to prevent CUDA context corruption in subprocesses.
+multiprocessing.set_start_method('spawn', force=True)
 
 import pickle
 import random
@@ -682,6 +685,7 @@ def design_binder(config,
 
         pdb.set_trace()
         #Save all init
+        save_structure(0, batch, prediction_result, 'init', outdir) #Test
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
@@ -846,6 +850,7 @@ def save_structure(i, batch, prediction_result, pred_id, outdir):
             'final_atom_mask': prediction_result['structure_module']['final_atom_mask'][i]
             }}
     # Add the predicted LDDT in the b-factor column.
+    pdb.set_trace()
     plddt_per_pos = jnp.sum(jax.nn.softmax(result['predicted_lddt']) * bin_centers[None, :], axis=-1)
     plddt_b_factors = np.repeat(plddt_per_pos[:, None], residue_constants.atom_type_num, axis=-1)
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
@@ -887,17 +892,19 @@ outdir = args.outdir[0]
 #Update config
 config.CONFIG.model.embeddings_and_evoformer['cyclic_offset'] = cyclic_offset
 
-#Predict
-design_binder(config.CONFIG,
-            predict_id,
-            MSA_feats,
-            num_recycles=num_recycles,
-            binder_lengths=binder_lengths,
-            num_iterations=num_iterations,
-            resample_every_n=resample_every_n,
-            batch_size=batch_size,
-            params=params,
-            rare_AAs=rare_AAs,
-            save_best_only=save_best_only,
-            max_workers=max_workers,
-            outdir=outdir)
+#Design
+if __name__ == '__main__':
+    # This is the entry point logic that calls the function starting the pool
+    design_binder(config.CONFIG,
+                predict_id,
+                MSA_feats,
+                num_recycles=num_recycles,
+                binder_lengths=binder_lengths,
+                num_iterations=num_iterations,
+                resample_every_n=resample_every_n,
+                batch_size=batch_size,
+                params=params,
+                rare_AAs=rare_AAs,
+                save_best_only=save_best_only,
+                max_workers=max_workers,
+                outdir=outdir)
