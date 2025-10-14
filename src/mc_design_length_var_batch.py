@@ -489,10 +489,9 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     #Define the plDDT bins
     bin_width = 1.0 / 50
     bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
-    pdb.set_trace()
-    #Add the predicted LDDT in the b-factor column.
-    plddt_per_pos = np.sum(softmax(result['predicted_lddt'], axis=-1) * bin_centers[None, :], axis=-1)
-
+    #Get plDDT per pos
+    plddt_per_pos = np.sum(softmax(prediction_result['predicted_lddt'][bi], axis=-1) * bin_centers[None, :], axis=-1)
+    #Final atom pos and mask
     final_atom_positions = prediction_result['structure_module']['final_atom_positions'][bi]
     final_atom_mask = prediction_result['structure_module']['final_atom_mask'][bi]
 
@@ -523,6 +522,7 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
 
     #Calc 2-norm - distance between peptide and interface
     # N_peptide x N_receptor x 3 intermediate array
+    pdb.set_trace()
     diff = peptide_coords[:, None, :] - receptor_coords[None, :, :]
     # N_peptide x N_receptor distance matrix
     contact_dists = np.sqrt(np.sum(diff**2, axis=-1))
