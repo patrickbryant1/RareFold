@@ -195,9 +195,8 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
     """Make the batch uniform
     """
 
+    pdb.set_trace()
     #Get max sizes
-    pep_lens = [len(x['peptide_ca_positions']) for x in init_feature_dicts]
-    max_pep_len = max(pep_lens)
     tot_lens = [len(x['int_seq']) for x in init_feature_dicts]
     max_tot_len = max(tot_lens)
 
@@ -526,7 +525,6 @@ def design_binder(config,
     #Get target length
     target_length = len(MSA_feats['aatype'])
     print("--- Targeting a protein of length"+str(target_length)+" ---")
-    pdb.set_trace()
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
