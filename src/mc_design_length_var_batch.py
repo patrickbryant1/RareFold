@@ -424,6 +424,21 @@ def get_atom_mapping_per_restype():
 
     return restype_atom_mappings, len(residue_constants.restype_name_to_atom14_names.keys())
 
+def jax_independent_result(batch, prediction_result):
+    """
+    """
+
+
+    #Convert to CPU
+    numpy_plddt_logits = jax.device_get(prediction_result['predicted_lddt']['logits'])
+    numpy_final_atom_positions = jax.device_get(prediction_result['structure_module']['final_atom_positions'])
+    numpy_final_atom_mask = jax.device_get(prediction_result['structure_module']['final_atom_mask'])
+
+    numpy_result = {'predicted_lddt':numpy_plddt_logits,
+                'structure_module':{'final_atom_positions':numpy_final_atom_positions,
+                'final_atom_mask': numpy_final_atom_mask}
+                }
+    return numpy_pred_result
 
 
 def update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings):
@@ -673,16 +688,16 @@ def design_binder(config,
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
         print('Making uniform batch took',np.round(time.time()-t0,2),'s')
 
-        pdb.set_trace()
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took',time.time()-t0,'s')
 
-
+        #Convert prediction result to be independent of jax
+        numpy_pred_result = jax_independent_result(prediction_result)
         pdb.set_trace()
         #Save all init
-        save_structure(0, batch, prediction_result, 'init', outdir) #Test
+        save_structure(0, batch, numpy_pred_result, 'init', outdir) #Test
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
@@ -824,7 +839,7 @@ def design_binder(config,
 
 
 
-def save_structure(i, batch, prediction_result, pred_id, outdir):
+def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     """Save prediction
 
     save_feats = {'aatype':batch['aatype'][0][0], 'residue_index':batch['residue_index'][0][0]}
@@ -835,20 +850,22 @@ def save_structure(i, batch, prediction_result, pred_id, outdir):
     save_structure(save_feats, result, step_num, outdir)
 
     """
+
     #Define the plDDT bins
     bin_width = 1.0 / 50
     bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
 
-    #for i in range(len(batch['aatype'])):
     #Save structure
+    pdb.set_trace()
     save_feats = {'aatype':batch['aatype'][i], 'residue_index':batch['residue_index'][i]}
-    result = {'predicted_lddt':prediction_result['predicted_lddt']['logits'][i],
-            'structure_module':{'final_atom_positions':prediction_result['structure_module']['final_atom_positions'][i],
-            'final_atom_mask': prediction_result['structure_module']['final_atom_mask'][i]
+    result = {'predicted_lddt':numpy_pred_result['predicted_lddt']['logits'][i],
+            'structure_module':{'final_atom_positions':numpy_pred_result['structure_module']['final_atom_positions'][i],
+            'final_atom_mask': numpy_pred_result['structure_module']['final_atom_mask'][i]
             }}
     # Add the predicted LDDT in the b-factor column.
     pdb.set_trace()
-    plddt_per_pos = jnp.sum(jax.nn.softmax(result['predicted_lddt']) * bin_centers[None, :], axis=-1)
+
+    plddt_per_pos = np.sum(softmax(plddt_logits[i]) * bin_centers[None, :], axis=-1)
     plddt_b_factors = np.repeat(plddt_per_pos[:, None], residue_constants.atom_type_num, axis=-1)
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
     unrelaxed_pdb = protein.to_pdb(unrelaxed_protein)
