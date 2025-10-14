@@ -434,7 +434,7 @@ def jax_independent_result(prediction_result):
     numpy_final_atom_positions = jax.device_get(prediction_result['structure_module']['final_atom_positions'])
     numpy_final_atom_mask = jax.device_get(prediction_result['structure_module']['final_atom_mask'])
 
-    numpy_result = {'predicted_lddt':numpy_plddt_logits,
+    numpy_pred_result = {'predicted_lddt':numpy_plddt_logits,
                 'structure_module':{'final_atom_positions':numpy_final_atom_positions,
                 'final_atom_mask': numpy_final_atom_mask}
                 }
