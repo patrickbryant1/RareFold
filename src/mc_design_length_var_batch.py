@@ -424,7 +424,7 @@ def get_atom_mapping_per_restype():
 
     return restype_atom_mappings, len(residue_constants.restype_name_to_atom14_names.keys())
 
-def jax_independent_result(batch, prediction_result):
+def jax_independent_result(prediction_result):
     """
     """
 
@@ -438,6 +438,7 @@ def jax_independent_result(batch, prediction_result):
                 'structure_module':{'final_atom_positions':numpy_final_atom_positions,
                 'final_atom_mask': numpy_final_atom_mask}
                 }
+
     return numpy_pred_result
 
 
@@ -686,12 +687,12 @@ def design_binder(config,
         print('Making batch uniform...')
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-        print('Making uniform batch took',np.round(time.time()-t0,2),'s')
+        print('Making uniform batch took', np.round(time.time()-t0,2),'s')
 
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
-        print('Init pred took',time.time()-t0,'s')
+        print('Init pred took', np.round(time.time()-t0, 2),'s')
 
         #Convert prediction result to be independent of jax
         numpy_pred_result = jax_independent_result(prediction_result)
@@ -701,7 +702,7 @@ def design_binder(config,
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
-                    constant_args=(batch, prediction_result, 'init', outdir),
+                    constant_args=(batch, numpy_pred_result, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
 
