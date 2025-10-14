@@ -475,7 +475,6 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     #Divide by receptor/peptide
     binder_length = binder_lengths[bi]
     total_length = target_length+binder_length
-    pdb.set_trace()
     u_resnos = np.unique(extracted_resnos)[:total_length]
     peptide_resnos = u_resnos[-binder_length:]
     receptor_inds = np.argwhere(np.array(extracted_resnos)<peptide_resnos[0])[:,0]
@@ -532,7 +531,7 @@ def parallel_map(
         A list of results, ordered by the input iterable.
     """
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         # Define a wrapper function to pass the constant arguments along with the iterable argument
         def wrapper_func(iter_arg):
             return func(iter_arg, *constant_args)
@@ -700,7 +699,7 @@ def design_binder(config,
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(prediction_result, binder_lengths, target_length),
+                                constant_args=(prediction_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
         pdb.set_trace()
@@ -775,7 +774,7 @@ def design_binder(config,
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(prediction_result, binder_lengths, target_length),
+                                constant_args=(prediction_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
 
