@@ -525,6 +525,7 @@ def design_binder(config,
     #Get target length
     target_length = len(MSA_feats['aatype'])
     print("--- Targeting a protein of length "+str(target_length)+" ---")
+    print('--- Using a batch size of', batch_size, 'and lengths',binder_lengths, '---')
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
@@ -621,8 +622,6 @@ def design_binder(config,
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-
-        pdb.set_trace()
 
         print('Predicting init...')
         t0 = time.time()
