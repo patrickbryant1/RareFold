@@ -489,9 +489,9 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     #Define the plDDT bins
     bin_width = 1.0 / 50
     bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
-
+    pdb.set_trace()
     #Add the predicted LDDT in the b-factor column.
-    plddt_per_pos = jnp.sum(jax.nn.softmax(prediction_result['predicted_lddt']['logits'][bi]) * bin_centers[None, :], axis=-1)
+    plddt_per_pos = np.sum(softmax(result['predicted_lddt'], axis=-1) * bin_centers[None, :], axis=-1)
 
     final_atom_positions = prediction_result['structure_module']['final_atom_positions'][bi]
     final_atom_mask = prediction_result['structure_module']['final_atom_mask'][bi]
@@ -696,7 +696,7 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took', np.round(time.time()-t0, 2),'s')
 
-        #Convert prediction result to be independent of jax
+        #Convert prediction result to be independent of jax - necessary for threading
         numpy_pred_result = jax_independent_result(prediction_result)
 
         #Save all init
@@ -708,6 +708,7 @@ def design_binder(config,
         print('Saving init took',time.time()-t0,'s')
 
         #Get loss
+        get_loss(0, numpy_pred_result, binder_lengths, target_length)
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
