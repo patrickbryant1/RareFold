@@ -628,7 +628,7 @@ def design_binder(config,
         #Save all init
         t0 = time.time()
         parallel_map(func=save_structure,
-                    iter_args=np.arange(lengths_in_batch),
+                    iter_args=np.arange(len(lengths_in_batch)),
                     constant_args=(batch, prediction_result, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
@@ -638,7 +638,7 @@ def design_binder(config,
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
-                                iter_args=np.arange(lengths_in_batch),
+                                iter_args=np.arange(len(lengths_in_batch)),
                                 constant_args=(prediction_result, binder_lengths, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
@@ -708,7 +708,7 @@ def design_binder(config,
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
-                                iter_args=np.arange(lengths_in_batch),
+                                iter_args=np.arange(len(lengths_in_batch)),
                                 constant_args=(prediction_result, binder_lengths, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
