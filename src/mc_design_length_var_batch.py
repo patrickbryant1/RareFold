@@ -480,7 +480,8 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     inter_clashes = np.argwhere(contact_dists < 1.5)
     inter_clash_frac = inter_clashes.shape[0]/(1e-7+contact_dists.shape[0])
     #Intra
-    binder_intra_dists = np.sqrt(np.sum(peptide_coords[:,None] - peptide_coords[None,:])**2, axis=-1))
+    binder_intra_dists = np.sqrt(np.sum((peptide_coords[:,None] - peptide_coords[None,:])**2, axis=-1))
+
     intra_clashes = np.argwhere(binder_intra_dists < 1)
     intra_clash_frac = intra_clashes.shape[0]/(1e-7+l1**2)
 
