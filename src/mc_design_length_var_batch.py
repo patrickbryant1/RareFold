@@ -680,9 +680,9 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took',time.time()-t0,'s')
 
-        #Check GPU utilisation
-        check_gpu_memory_and_utilization(batch_size)
 
+
+        pdb.set_trace()
         #Save all init
         t0 = time.time()
         parallel_map(func=save_structure,
@@ -690,6 +690,8 @@ def design_binder(config,
                     constant_args=(batch, prediction_result, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
+
+        pdb.set_trace()
 
         #Get loss
         print("--- Running loss calculations in parallel ---")
@@ -718,6 +720,8 @@ def design_binder(config,
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
 
+        #Check GPU utilisation
+        check_gpu_memory_and_utilization(batch_size)
 
     #Get restype atom mappings - will be used to update the peptide feats each iteration
     #These are index-based, following the same order as in resiue_constants (used for the int_seq)
