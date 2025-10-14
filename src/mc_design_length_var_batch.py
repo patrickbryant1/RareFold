@@ -705,7 +705,6 @@ def design_binder(config,
         print('Saving init took',time.time()-t0,'s')
 
         #Get loss
-        get_loss(0, numpy_pred_result, binder_lengths, target_length)
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
