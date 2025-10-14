@@ -229,7 +229,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
 
     #Assign each example into the uniform batch
     for i in range(batch_size):
-        tl = total_lens[i]
+        tl = tot_lens[i]
         feats_i = init_feature_dicts[i]
         batch['residue_index'][i,:,:tl] = feats_i['residue_index']
         batch['seq_length'][i,:,:tl] = feats_i['seq_length']
@@ -525,7 +525,7 @@ def design_binder(config,
 
     #Get target length
     target_length = len(MSA_feats['aatype'])
-    print("--- Targeting a protein of length"+str(target_length)+" ---")
+    print("--- Targeting a protein of length "+str(target_length)+" ---")
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
