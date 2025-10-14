@@ -247,7 +247,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
         batch['extra_deletion_value'][i,:,:,:tl] = feats_i['extra_deletion_value']
         batch['msa_feat'][i,:,:,:tl,:] = feats_i['msa_feat']
         batch['target_feat'][i,:,:tl,:] = feats_i['target_feat']
-        batch['native_peptide_length'][i,:,:] = pep_lens[i]
         #Lengths
         batch['target_length'][i,:,:] = target_len
         batch['binder_length'][i,:,:] = pep_lens[i]
@@ -257,7 +256,10 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
+
+    print(feats_i.keys())
     pdb.set_trace()
+
 
     return batch
 
