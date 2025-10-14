@@ -698,9 +698,10 @@ def design_binder(config,
 
         #Convert prediction result to be independent of jax
         numpy_pred_result = jax_independent_result(prediction_result)
-        pdb.set_trace()
+
         #Save all init
         save_structure(0, batch, numpy_pred_result, 'init', outdir) #Test
+        pdb.set_trace()
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
