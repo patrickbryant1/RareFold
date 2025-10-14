@@ -672,6 +672,8 @@ def design_binder(config,
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
         print('Making uniform batch took',np.round(time.time()-t0,2),'s')
+
+        pdb.set_trace()
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
@@ -887,19 +889,17 @@ outdir = args.outdir[0]
 #Update config
 config.CONFIG.model.embeddings_and_evoformer['cyclic_offset'] = cyclic_offset
 
-#Design
-if __name__ == '__main__':
-    # This is the entry point logic that calls the function starting the pool
-    design_binder(config.CONFIG,
-                predict_id,
-                MSA_feats,
-                num_recycles=num_recycles,
-                binder_lengths=binder_lengths,
-                num_iterations=num_iterations,
-                resample_every_n=resample_every_n,
-                batch_size=batch_size,
-                params=params,
-                rare_AAs=rare_AAs,
-                save_best_only=save_best_only,
-                max_workers=max_workers,
-                outdir=outdir)
+# Design
+design_binder(config.CONFIG,
+            predict_id,
+            MSA_feats,
+            num_recycles=num_recycles,
+            binder_lengths=binder_lengths,
+            num_iterations=num_iterations,
+            resample_every_n=resample_every_n,
+            batch_size=batch_size,
+            params=params,
+            rare_AAs=rare_AAs,
+            save_best_only=save_best_only,
+            max_workers=max_workers,
+            outdir=outdir)
