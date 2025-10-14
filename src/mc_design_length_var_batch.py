@@ -521,7 +521,7 @@ def parallel_map(
     func: Callable,
     iter_args: Iterable,
     constant_args: tuple = (),
-    max_workers: int = None
+    max_workers: int = None,
     use_processes: bool = True,
 ) -> List[Any]:
     """
