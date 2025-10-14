@@ -465,19 +465,18 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     receptor_coords = extracted_coords[receptor_inds]
     peptide_coords = extracted_coords[peptide_inds]
 
-
     #Calc 2-norm - distance between peptide and interface
-    mat = np.concatenate([peptide_coords, receptor_coords],axis=0)
-    dists = np.sqrt(np.sum((mat[:,None] - mat[None,:])**2, axis=-1))
-    l1 = len(peptide_coords)
-    #Get interface
-    contact_dists = dists[:l1,l1:] ##first dimension = peptide, second = receptor
+    # N_peptide x N_receptor x 3 intermediate array
+    diff = peptide_coords[:, None, :] - receptor_coords[None, :, :]
+    # N_peptide x N_receptor distance matrix
+    contact_dists = np.sqrt(np.sum(diff**2, axis=-1))
+    pdb.set_trace()
     #Get clashes
     #Inter
     inter_clashes = np.argwhere(contact_dists < 1.5)
     inter_clash_frac = inter_clashes.shape[0]/(1e-7+contact_dists.shape[0])
     #Intra
-    binder_intra_dists = dists[:l1,:l1]
+    binder_intra_dists = np.sqrt(np.sum(peptide_coords[:,None] - peptide_coords[None,:])**2, axis=-1))
     intra_clashes = np.argwhere(binder_intra_dists < 1)
     intra_clash_frac = intra_clashes.shape[0]/(1e-7+l1**2)
 
@@ -485,7 +484,8 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
     closest_dists_peptide = contact_dists[np.arange(contact_dists.shape[0]),np.argmin(contact_dists,axis=1)]
 
     #Get the binder plDDT
-    binder_plDDT = plddt_per_pos[-binder_length:]
+    pdb.set_trace()
+    binder_plDDT = plddt_per_pos[target_length:target_length+binder_length]
 
     return closest_dists_peptide.mean(), binder_plDDT.mean()*100, inter_clash_frac, intra_clash_frac/10
 
