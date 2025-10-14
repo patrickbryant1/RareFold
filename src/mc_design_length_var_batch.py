@@ -515,7 +515,7 @@ def parallel_map(
     iter_args: Iterable,
     constant_args: tuple = (),
     max_workers: int = None,
-    use_processes: bool = True, #If set to false - not true threading, threading within each CPU core
+    use_processes: bool = True, #If set to False - not true threading, threading within each CPU core
 ) -> List[Any]:
     """
     Executes a function in parallel using threads or processes.
@@ -533,7 +533,7 @@ def parallel_map(
         A list of results, ordered by the input iterable.
     """
 
-     Executor = (
+    Executor = (
         concurrent.futures.ProcessPoolExecutor if use_processes
         else concurrent.futures.ThreadPoolExecutor
     )
