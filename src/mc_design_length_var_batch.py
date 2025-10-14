@@ -297,7 +297,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
               'target_length': np.zeros((batch_size, 1, 1)),
               'binder_length': np.zeros((batch_size, 1, 1)),
               'total_length': np.zeros((batch_size, 1, 1)),
-              'cyclic_offset': np.zeros((batch_size, max_tot_len, max_tot_len)),
+              'cyclic_offset': np.zeros((batch_size, max_tot_len, max_tot_len, 1, 1)),
               }
 
     #Assign each example into the uniform batch
@@ -325,7 +325,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
         batch['binder_length'][i,:,:] = pep_lens[i]
         batch['total_length'][i,:,:] = tl
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
-            batch['cyclic_offset'][i,:tl,:tl] = feats_i['cyclic_offset']
+            batch['cyclic_offset'][i,:tl,:tl,:,:] = feats_i['cyclic_offset']
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
