@@ -859,10 +859,11 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     #Save structure
     pdb.set_trace()
     save_feats = {'aatype':batch['aatype'][i], 'residue_index':batch['residue_index'][i]}
-    result = {'predicted_lddt':numpy_pred_result['predicted_lddt']['logits'][i],
-            'structure_module':{'final_atom_positions':numpy_pred_result['structure_module']['final_atom_positions'][i],
-            'final_atom_mask': numpy_pred_result['structure_module']['final_atom_mask'][i]
-            }}
+    result = {'predicted_lddt':numpy_pred_result['predicted_lddt'][i],
+            'structure_module':
+                {'final_atom_positions':numpy_pred_result['structure_module']['final_atom_positions'][i],
+                'final_atom_mask': numpy_pred_result['structure_module']['final_atom_mask'][i]}
+            }
     # Add the predicted LDDT in the b-factor column.
     pdb.set_trace()
 
