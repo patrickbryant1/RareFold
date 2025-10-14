@@ -522,26 +522,23 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
 
     #Calc 2-norm - distance between peptide and interface
     # N_peptide x N_receptor x 3 intermediate array
-    pdb.set_trace()
     diff = peptide_coords[:, None, :] - receptor_coords[None, :, :]
     # N_peptide x N_receptor distance matrix
     contact_dists = np.sqrt(np.sum(diff**2, axis=-1))
-    pdb.set_trace()
+
     #Get clashes
     #Inter
     inter_clashes = np.argwhere(contact_dists < 1.5)
     inter_clash_frac = inter_clashes.shape[0]/(1e-7+contact_dists.shape[0])
     #Intra
     binder_intra_dists = np.sqrt(np.sum((peptide_coords[:,None] - peptide_coords[None,:])**2, axis=-1))
-
     intra_clashes = np.argwhere(binder_intra_dists < 1)
-    intra_clash_frac = intra_clashes.shape[0]/(1e-7+l1**2)
+    intra_clash_frac = intra_clashes.shape[0]/(1e-7+len(peptide_coords)**2)
 
     #Get the closest atom-atom distances across the receptor interface residues.
     closest_dists_peptide = contact_dists[np.arange(contact_dists.shape[0]),np.argmin(contact_dists,axis=1)]
 
     #Get the binder plDDT
-    pdb.set_trace()
     binder_plDDT = plddt_per_pos[target_length:target_length+binder_length]
 
     return closest_dists_peptide.mean(), binder_plDDT.mean()*100, inter_clash_frac, intra_clash_frac/10
