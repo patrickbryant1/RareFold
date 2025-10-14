@@ -91,31 +91,11 @@ def check_gpu_memory_and_utilization(batch_size):
     total_reserved_bytes = memory_stats.get('bytes_limit')
     total_reserved_gb = total_reserved_bytes / (1024**3) if total_reserved_bytes else 0
 
-    # Memory currently in use by JAX arrays/executables
-    used_bytes = memory_stats.get('bytes_in_use')
-    used_gb = used_bytes / (1024**3) if used_bytes else 0
-
-    # Memory that is free within the JAX-reserved pool
-    free_bytes = total_reserved_bytes - used_bytes
-    free_gb = free_bytes / (1024**3) if free_bytes else 0
-
-    # Calculate a rough utilization based on JAX's reserved pool
-    utilization = (used_gb / total_reserved_gb) * 100 if total_reserved_gb else 0
-
     print(f"Total JAX-Reserved Memory: {total_reserved_gb:.2f} GB")
-    print(f"Memory Currently Used:     {used_gb:.2f} GB")
-    print(f"Memory Available (Free):   {free_gb:.2f} GB")
-    print(f"GPU Utilization (JAX Pool): {utilization:.2f}%")
-
-    # Note: 'peak_bytes_allocated' shows the highest usage reached since the process started.
-    peak_bytes = memory_stats.get('peak_bytes_allocated')
-    peak_gb = peak_bytes / (1024**3) if peak_bytes else 0
-    print(f"Peak Memory Used:          {peak_gb:.2f} GB")
 
     #Suggest a batch size based on usage
-    mem_per_thread = used_gb/batch_size #Note that this is not the effective batch size
-    possible_increase = np.floor(free_gb/mem_per_thread)
-    print('Possible to increase the batch size by', possible_increase, 'if keeping the same lengths.')
+    mem_per_thread = total_reserved_gb/batch_size #Note that this is not the effective batch size
+    print('Memory per thread', mem_per_thread, 'if keeping the same lengths.')
 
 
 
@@ -569,6 +549,10 @@ def design_binder(config,
     """Design a binder
     """
 
+    #Check CPUs for threading
+    print('Number of available CPUs:', os.cpu_count())
+    print('Number of workers set for CPU parallel calls', max_workers)
+
     #Get mappings
     all_AA_triplets = np.array([*residue_constants.restype_name_to_atom14_names.keys()])
     #Select the ones that are in design AAs
@@ -697,6 +681,7 @@ def design_binder(config,
         #Check GPU utilisation
         check_gpu_memory_and_utilization(batch_size)
 
+        pdb.set_trace()
         #Save all init
         t0 = time.time()
         parallel_map(func=save_structure,
