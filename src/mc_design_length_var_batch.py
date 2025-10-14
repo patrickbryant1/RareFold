@@ -195,12 +195,10 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
     """Make the batch uniform
     """
 
-    pdb.set_trace()
     #Get max sizes
     tot_lens = [len(x['int_seq']) for x in init_feature_dicts]
     max_tot_len = max(tot_lens)
 
-    pdb.set_trace()
     #The batch size here is the number of examples in init_feature_dicts
     batch_size = len(init_feature_dicts)
     ex = init_feature_dicts[0] #To get shapes
@@ -231,7 +229,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
 
     #Assign each example into the uniform batch
     for i in range(batch_size):
-        rl, pl, tl = receptor_lens[i], pep_lens[i], tot_lens[i]
+        tl = total_lens[i]
         feats_i = init_feature_dicts[i]
         batch['residue_index'][i,:,:tl] = feats_i['residue_index']
         batch['seq_length'][i,:,:tl] = feats_i['seq_length']
@@ -253,12 +251,13 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
         #Lengths
         batch['target_length'][i,:,:] = target_len
         batch['binder_length'][i,:,:] = pep_lens[i]
-        batch['total_length'][i,:,:] = tot_lens[i]
+        batch['total_length'][i,:,:] = tl
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
             batch['cyclic_offset'][i,:tl,:tl] = feats_i['cyclic_offset']
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
+    pdb.set_trace()
 
     return batch
 
