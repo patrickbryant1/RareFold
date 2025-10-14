@@ -297,7 +297,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
               'target_length': np.zeros((batch_size, 1, 1)),
               'binder_length': np.zeros((batch_size, 1, 1)),
               'total_length': np.zeros((batch_size, 1, 1)),
-              'cyclic_offset': np.zeros((batch_size, max_tot_len, max_tot_len, 1, 1)),
+              'cyclic_offset': np.zeros((batch_size, 1, max_tot_len, max_tot_len)),
               }
 
     #Assign each example into the uniform batch
@@ -325,7 +325,7 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
         batch['binder_length'][i,:,:] = pep_lens[i]
         batch['total_length'][i,:,:] = tl
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
-            batch['cyclic_offset'][i,:tl,:tl,:,:] = feats_i['cyclic_offset']
+            batch['cyclic_offset'][i,:,:tl,:tl] = feats_i['cyclic_offset']
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
@@ -700,16 +700,12 @@ def design_binder(config,
         numpy_pred_result = jax_independent_result(prediction_result)
 
         #Save all init
-        save_structure(0, batch, numpy_pred_result, 'init', outdir) #Test
-        pdb.set_trace()
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
                     constant_args=(batch, numpy_pred_result, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
-
-        pdb.set_trace()
 
         #Get loss
         print("--- Running loss calculations in parallel ---")

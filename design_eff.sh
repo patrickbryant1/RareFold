@@ -16,7 +16,7 @@ fi
 
 
 #############PARAMS FOR DESIGN#############
-MAX_RECYCLES=8 #max_recycles (default=3)
+MAX_RECYCLES=1 #max_recycles (default=3)
 BINDER_LENGTHS="10,11,12"
 NITER=1000
 RESAMPLE_FREQ=100 #How often to resample the MSA
