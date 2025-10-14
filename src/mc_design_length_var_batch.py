@@ -160,8 +160,6 @@ def process_input_feats(new_feature_dict, config):
         cyclic_offset_array[-len(binder_cyclic_offset_array):,-len(binder_cyclic_offset_array):]=binder_cyclic_offset_array
         new_feature_dict['cyclic_offset'] = cyclic_offset_array
 
-
-
     #Arrange feats
     batch_ex = copy.deepcopy(new_feature_dict)
 
@@ -311,8 +309,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
 
-    print(feats_i.keys())
-
     return batch
 
 ##########MODEL and DESIGN#########
@@ -335,9 +331,14 @@ def initialize_weights(binder_length, batch_size, all_AA_triplets, selected_AA_i
     return binder_seqs, onehot_binder_seqs
 
 
-def mutate_sequence(onehot_binder_seq, searched_seqs, all_AA_triplets, selected_AA_index):
+def mutate_sequence(bi, onehot_binder_seqs, searched_seqs_all, all_AA_triplets, selected_AA_index):
     '''Mutate the amino acid sequence randomly
     '''
+
+    #Select
+    onehot_binder_seq = onehot_binder_seqs[bi]
+    searched_seqs = searched_seqs_all[:, bi]
+
 
     seqlen = len(onehot_binder_seq)
     searched_seqs = [list(x) for x in searched_seqs]
@@ -694,7 +695,6 @@ def design_binder(config,
                     max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
 
-        pdb.set_trace()
         #Get loss
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
@@ -703,7 +703,7 @@ def design_binder(config,
                                 constant_args=(prediction_result, binder_lengths, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
-
+        pdb.set_trace()
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
         inter_clash_fracs = np.array([x[2] for x in iter_loss_metrics])
@@ -733,11 +733,16 @@ def design_binder(config,
         #Can't prefetch - dependent on the previous iter
         #Mutate sequence
         t_0 = time.time()
-        mut_seqs = [mutate_sequence(int_binder_seqs[i], np.array(sequence_scores['int_seq'])[:,i], all_AA_triplets, selected_AA_index) for i in range(batch_size)]
+        mut_seqs = parallel_map(func=mutate_sequence,
+                                iter_args= np.arange(len(lengths_in_batch)),
+                                constant_args=(int_binder_seqs, np.array(sequence_scores['int_seq']), all_AA_triplets, selected_AA_index),
+                                max_workers=max_workers)
+
         int_binder_seqs = [x[0] for x in mut_seqs]
         binder_seqs = [x[1] for x in mut_seqs]
         print('Mutating sequences took', time.time() - t_0,'s')
 
+        pdb.set_trace()
         t_0 = time.time()
         if niter%resample_every_n==0:
             #Reload batch to resample MSA
@@ -793,6 +798,7 @@ def design_binder(config,
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
+        print('Adding metrics took', time.time() - t_0,'s')
 
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
         #Reset starting point to min
@@ -804,14 +810,20 @@ def design_binder(config,
             if save_best_only=='True':
                 #Check if improvement --> save
                 if best_inds[i]==len(sequence_scores['loss'])-1:
-                    #Save structure
-                    save_structure(batch, prediction_result, i, 'unrelaxed_'+str(niter), outdir)
+                    #Save structures
+                    parallel_map(func=save_structure,
+                                iter_args=np.arange(len(lengths_in_batch)),
+                                constant_args=(batch, prediction_result, 'init', outdir),
+                                max_workers=max_workers)
             else:
-                #Save structure
-                save_structure(batch, prediction_result, i, 'unrelaxed_'+str(niter), outdir)
+                #Save structures
+                parallel_map(func=save_structure,
+                            iter_args=np.arange(len(lengths_in_batch)),
+                            constant_args=(batch, prediction_result, 'init', outdir),
+                            max_workers=max_workers)
 
 
-        print('Adding metrics took', time.time() - t_0,'s')
+
 
 def save_structure(i, batch, prediction_result, pred_id, outdir):
     """Save prediction
