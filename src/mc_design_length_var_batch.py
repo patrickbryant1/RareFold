@@ -1,6 +1,26 @@
 import json
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING, 3 = filter ERROR
+
+def suppress_jax_warnings():
+    """
+    Suppresses common JAX/XLA/TensorFlow log messages
+    like 'absl::InitializeLog()' and 'MLIR V1 optimization pass is not enabled'.
+    """
+    # 1. Suppress 'absl::InitializeLog()' and 'MLIR V1' messages (I0000 logs)
+    # GLOG_minloglevel=2 sets the minimum logging level to 'ERROR'.
+    # 0:INFO, 1:WARNING, 2:ERROR, 3:FATAL
+    os.environ["GLOG_minloglevel"] = "2"
+
+    # 2. Suppress gRPC-related warnings (often related to absl logs)
+    os.environ["GRPC_VERBOSITY"] = "ERROR"
+
+    # 3. Suppress JAX-specific warnings/deprecations (optional, but good practice)
+    os.environ["JAX_PLATFORMS"] = "cpu,gpu" # Explicitly specify platforms
+    # os.environ["JAX_CPP_MIN_LOG_LEVEL"] = "2" # Can also be used for suppression
+
+# Run this function at the very beginning of your script
+suppress_jax_warnings()
+
 import warnings
 import pathlib
 import pickle
@@ -12,8 +32,6 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import optax
-#Silence tf
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.compat.v1 as tf
 tf.config.set_visible_devices([], 'GPU')
 
@@ -63,6 +81,8 @@ parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 ##############FUNCTIONS##############
+
+
 
 def check_gpu_memory_and_utilization(batch_size):
     """
@@ -655,8 +675,9 @@ def design_binder(config,
                                 max_workers=max_workers)
         print('Init feats took',time.time()-t0,'s')
         print('Making batch uniform...')
+        t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-
+        print('Making uniform batch took',time.time()-t0,'s')
 
     else:
         print('--- No previous run found. Starting new... ---')
@@ -671,8 +692,9 @@ def design_binder(config,
         print('Init feats took',time.time()-t0,'s')
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
+        t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-
+        print('Making uniform batch took',time.time()-t0,'s')
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
