@@ -6,7 +6,6 @@ import pickle
 import random
 import sys
 import time
-from functools import partial
 from typing import Dict, Optional, Callable, Iterable, Any, List, NamedTuple
 import haiku as hk
 import jax
@@ -509,13 +508,21 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
 
     return closest_dists_peptide.mean(), binder_plDDT.mean()*100, inter_clash_frac, intra_clash_frac/10
 
+def _wrapper_func(args):
+    """
+    When you use ProcessPoolExecutor, Python needs to pickle (serialise) the function you’re sending to each subprocess.
+    Wrapper_func needs to be defined outside another function (parallel_map).
+    If inside → That makes it a local function, and local (nested) functions cannot be pickled.
+    """
+    func, iter_arg, constant_args = args
+    return func(iter_arg, *constant_args)
 
 def parallel_map(
     func: Callable,
     iter_args: Iterable,
     constant_args: tuple = (),
     max_workers: int = None,
-    use_processes: bool = True, #If set to False - not true threading, threading within each CPU core
+    use_processes: bool = True, #If False - not true threading, threading only within each CPU core
 ) -> List[Any]:
     """
     Executes a function in parallel using threads or processes.
@@ -539,9 +546,9 @@ def parallel_map(
     )
 
     with Executor(max_workers=max_workers) as executor:
-        bound_func = partial(func, *constant_args)
-        results = list(executor.map(bound_func, iter_args))
-
+        results = list(
+            executor.map(_wrapper_func, [(func, iter_arg, constant_args) for iter_arg in iter_args])
+        )
 
     return results
 
