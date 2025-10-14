@@ -218,9 +218,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
               'extra_deletion_value': np.zeros((batch_size, 1, ex['extra_deletion_value'].shape[0], max_tot_len)),
               'msa_feat': np.zeros((batch_size, 1, ex['msa_feat'].shape[0], max_tot_len, ex['msa_feat'].shape[2])),
               'target_feat': np.zeros((batch_size, 1, max_tot_len, ex['target_feat'].shape[1])),
-              'atom14_atom_exists': np.zeros((batch_size, 1, max_tot_len, ex['atom14_atom_exists'].shape[1])), #This doesn't do anything, but called within folding (losses used for training)
-              'chi_angles':np.zeros((batch_size, 1, max_tot_len, 4)),
-              'chi_angles_mask':np.zeros((batch_size, 1, max_tot_len, 4)),
               'target_length': np.zeros((batch_size, 1, 1)),
               'binder_length': np.zeros((batch_size, 1, 1)),
               'total_length': np.zeros((batch_size, 1, 1)),
