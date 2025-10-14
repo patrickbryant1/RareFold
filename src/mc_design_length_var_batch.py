@@ -629,11 +629,21 @@ def design_binder(config,
         print('Init pred took',time.time()-t0,'s')
         #Save all init
         t0 = time.time()
-        [save_structure(batch, prediction_result, i, 'init', outdir) for i in range(batch_size)]
+        parallel_map(func=save_structure,
+                    iter_args=np.arange(lengths_in_batch),
+                    constant_args=(batch, prediction_result, 'init', outdir),
+                    max_workers=max_workers)
         print('Saving init took',time.time()-t0,'s')
 
-        #Loss
-        iter_loss_metrics = [get_loss(prediction_result, i, binder_length) for i in range(batch_size)]
+        pdb.set_trace()
+        #Get loss
+        print("--- Running loss calculations in parallel ---")
+        t_0 = time.time()
+        iter_loss_metrics = parallel_map(func=get_loss,
+                                iter_args=np.arange(lengths_in_batch),
+                                constant_args=(prediction_result, binder_lengths, target_length),
+                                max_workers=max_workers)
+        print('Loss calcs took', time.time() - t_0,'s')
 
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
@@ -700,7 +710,7 @@ def design_binder(config,
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
-                                iter_args=np.arange(batch_size),
+                                iter_args=np.arange(lengths_in_batch),
                                 constant_args=(prediction_result, binder_lengths, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
@@ -744,7 +754,7 @@ def design_binder(config,
 
         print('Adding metrics took', time.time() - t_0,'s')
 
-def save_structure(batch, prediction_result, i, pred_id, outdir):
+def save_structure(i, batch, prediction_result, pred_id, outdir):
     """Save prediction
 
     save_feats = {'aatype':batch['aatype'][0][0], 'residue_index':batch['residue_index'][0][0]}
@@ -771,7 +781,12 @@ def save_structure(batch, prediction_result, i, pred_id, outdir):
     plddt_b_factors = np.repeat(plddt_per_pos[:, None], residue_constants.atom_type_num, axis=-1)
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
     unrelaxed_pdb = protein.to_pdb(unrelaxed_protein)
-    unrelaxed_pdb_path = os.path.join(outdir+'/', pred_id+'_'+str(i)+'.pdb')
+    #Save per binder length
+    binder_length =batch['binder_length'][i]
+    binder_outdir = outdir+'/'+str(binder_length)+'/'
+    if not os.path.exists(binder_outdir):
+        os.mkdir(binder_outdir)
+    unrelaxed_pdb_path = os.path.join(binder_outdir, pred_id+'_'+str(i)+'.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
         f.write(unrelaxed_pdb)
 
