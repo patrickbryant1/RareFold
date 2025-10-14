@@ -191,7 +191,77 @@ def init_features(onehot_binder_seq, feature_dict, config):
 
     return new_feature_dict
 
+def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config):
+    """Make the batch uniform
+    """
 
+    #Get max sizes
+    pep_lens = [len(x['peptide_ca_positions']) for x in init_feature_dicts]
+    max_pep_len = max(pep_lens)
+    tot_lens = [len(x['int_seq']) for x in init_feature_dicts]
+    max_tot_len = max(tot_lens)
+
+    pdb.set_trace()
+    #The batch size here is the number of examples in init_feature_dicts
+    batch_size = len(init_feature_dicts)
+    ex = init_feature_dicts[0] #To get shapes
+    batch = {'residue_index': np.zeros((batch_size, 1, max_tot_len), dtype='int32'),
+              'seq_length': np.zeros((batch_size, 1, max_tot_len)),
+              'aatype': np.zeros((batch_size, 1, max_tot_len), dtype='int32'),
+              'seq_mask': np.zeros((batch_size, 1, max_tot_len)),
+              'msa_mask': np.zeros((batch_size, 1, ex['msa_mask'].shape[0], max_tot_len)),
+              'residx_atom14_to_atom37': np.zeros((batch_size, 1, max_tot_len, ex['residx_atom14_to_atom37'].shape[1]), dtype='int32'),
+              'residx_atom37_to_atom14': np.zeros((batch_size, 1, max_tot_len, ex['residx_atom37_to_atom14'].shape[1]), dtype='int32'),
+              'atom37_atom_exists': np.zeros((batch_size, 1, max_tot_len, ex['atom37_atom_exists'].shape[1])),
+              'extra_msa': np.zeros((batch_size, 1, ex['extra_msa'].shape[0], max_tot_len), dtype='int32'),
+              'extra_msa_mask': np.zeros((batch_size, 1, ex['extra_msa_mask'].shape[0], max_tot_len)),
+              'bert_mask': np.zeros((batch_size, 1, ex['bert_mask'].shape[0], max_tot_len)),
+              'true_msa': np.zeros((batch_size, 1, ex['true_msa'].shape[0], max_tot_len), dtype='int32'),
+              'extra_has_deletion': np.zeros((batch_size, 1, ex['extra_has_deletion'].shape[0], max_tot_len)),
+              'extra_deletion_value': np.zeros((batch_size, 1, ex['extra_deletion_value'].shape[0], max_tot_len)),
+              'msa_feat': np.zeros((batch_size, 1, ex['msa_feat'].shape[0], max_tot_len, ex['msa_feat'].shape[2])),
+              'target_feat': np.zeros((batch_size, 1, max_tot_len, ex['target_feat'].shape[1])),
+              'atom14_atom_exists': np.zeros((batch_size, 1, max_tot_len, ex['atom14_atom_exists'].shape[1])), #This doesn't do anything, but called within folding (losses used for training)
+              'chi_angles':np.zeros((batch_size, 1, max_tot_len, 4)),
+              'chi_angles_mask':np.zeros((batch_size, 1, max_tot_len, 4)),
+              'target_length': np.zeros((batch_size, 1, 1)),
+              'binder_length': np.zeros((batch_size, 1, 1)),
+              'total_length': np.zeros((batch_size, 1, 1)),
+              'cyclic_offset': np.zeros((batch_size, max_tot_len, max_tot_len)),
+              }
+
+    #Assign each example into the uniform batch
+    for i in range(batch_size):
+        rl, pl, tl = receptor_lens[i], pep_lens[i], tot_lens[i]
+        feats_i = init_feature_dicts[i]
+        batch['residue_index'][i,:,:tl] = feats_i['residue_index']
+        batch['seq_length'][i,:,:tl] = feats_i['seq_length']
+        batch['aatype'][i,:,:tl] = feats_i['aatype']
+        batch['seq_mask'][i,:,:tl] = feats_i['seq_mask']
+        batch['msa_mask'][i,:,:,:tl] = feats_i['msa_mask']
+        batch['residx_atom14_to_atom37'][i,:,:tl,:] = feats_i['residx_atom14_to_atom37']
+        batch['residx_atom37_to_atom14'][i,:,:tl,:] = feats_i['residx_atom37_to_atom14']
+        batch['atom37_atom_exists'][i,:,:tl,:] = feats_i['atom37_atom_exists']
+        batch['extra_msa'][i,:,:,:tl] = feats_i['extra_msa']
+        batch['extra_msa_mask'][i,:,:,:tl] = feats_i['extra_msa_mask']
+        batch['bert_mask'][i,:,:,:tl] = feats_i['bert_mask']
+        batch['true_msa'][i,:,:,:tl] = feats_i['true_msa']
+        batch['extra_has_deletion'][i,:,:,:tl] = feats_i['extra_has_deletion']
+        batch['extra_deletion_value'][i,:,:,:tl] = feats_i['extra_deletion_value']
+        batch['msa_feat'][i,:,:,:tl,:] = feats_i['msa_feat']
+        batch['target_feat'][i,:,:tl,:] = feats_i['target_feat']
+        batch['native_peptide_length'][i,:,:] = pep_lens[i]
+        #Lengths
+        batch['target_length'][i,:,:] = target_len
+        batch['binder_length'][i,:,:] = pep_lens[i]
+        batch['total_length'][i,:,:] = tot_lens[i]
+        if config.model.embeddings_and_evoformer.cyclic_offset==True:
+            batch['cyclic_offset'][i,:tl,:tl] = feats_i['cyclic_offset']
+
+    batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
+    batch['num_iter_recycling'][:] = num_recycles
+
+    return batch
 
 ##########MODEL and DESIGN#########
 def initialize_weights(binder_length, batch_size, all_AA_triplets, selected_AA_index):
@@ -318,7 +388,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, binder_length, num_AAs, r
 
     return batch
 
-def get_loss(prediction_result, bi, binder_length):
+def get_loss(prediction_result, binder_length, target_length):
     '''Predict and calculate loss
     '''
 
@@ -339,7 +409,7 @@ def get_loss(prediction_result, bi, binder_length):
     extracted_coords = []
     extracted_resnos = []
     ri=1
-    for i in range(len(final_atom_positions)):
+    for i in range(len(final_atom_positions)): #Num resis
         pos_i = final_atom_positions[i]
         mask_i = final_atom_mask[i]
         sel_inds = np.argwhere(mask_i>0.5)[:,0]
@@ -349,7 +419,9 @@ def get_loss(prediction_result, bi, binder_length):
 
 
     #Divide by receptor/peptide
-    u_resnos = np.unique(extracted_resnos)
+    total_length = target_length+binder_length
+    pdb.set_trace()
+    u_resnos = np.unique(extracted_resnos)[:total_length]
     peptide_resnos = u_resnos[-binder_length:]
     receptor_inds = np.argwhere(np.array(extracted_resnos)<peptide_resnos[0])[:,0]
     peptide_inds = np.argwhere(np.array(extracted_resnos)>=peptide_resnos[0])[:,0]
@@ -451,6 +523,11 @@ def design_binder(config,
         int_binder_seqs.extend(item[1])
         lengths_in_batch.extend([binder_lengths[i]]*batch_size)
 
+    #Get target length
+    target_length = len(MSA_feats['aatype'])
+    print("--- Targeting a protein of length"+str(target_length)+" ---")
+    pdb.set_trace()
+
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
             cyclic_offset_array = np.zeros((binder_length, binder_length))
@@ -528,7 +605,8 @@ def design_binder(config,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
         print('Init feats took',time.time()-t0,'s')
-        batch = uniform_batch(init_feature_dicts, lengths_in_batch, num_recycles, config)
+        print('Making batch uniform...')
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
 
 
     else:
@@ -540,13 +618,13 @@ def design_binder(config,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
-        pdb.set_trace()
+
         print('Init feats took',time.time()-t0,'s')
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
-        batch = uniform_batch(init_feature_dicts, lengths_in_batch, num_recycles, config)
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
 
-
+        pdb.set_trace()
 
         print('Predicting init...')
         t0 = time.time()
