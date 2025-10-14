@@ -1,5 +1,9 @@
-import json
 import os
+
+import multiprocessing
+# Set the start method to 'spawn' FIRST to avoid the CUDA/fork conflict
+# This ensures that any subsequent ProcessPoolExecutor starts clean processes.
+multiprocessing.set_start_method('spawn', force=True)
 
 import warnings
 import pathlib
@@ -23,7 +27,7 @@ from scipy.special import softmax
 import copy
 from ast import literal_eval
 import re
-import concurrent.futures
+import concurrent
 
 import pdb
 
