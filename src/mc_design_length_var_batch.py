@@ -353,7 +353,7 @@ def get_atom_mapping_per_restype():
 
 
 
-def update_peptide_batch_feats(batch, int_binder_seqs, binder_length, num_AAs, restype_atom_mappings):
+def update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings):
     """Update only the peptide batch feats that affect the prediction
     int_seq: batch_size,1,L
     residx_atom14_to_atom37: batch_size,1,L,25
@@ -364,6 +364,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, binder_length, num_AAs, r
     """
 
     target_feat = np.array([np.eye(num_AAs)[x] for x in int_binder_seqs])
+    pdb.set_trace()
     batch['target_feat'][:,:,-binder_length:,:] = np.expand_dims(target_feat, axis=1)
     batch['int_seq'][:,:,-binder_length:] = np.expand_dims(int_binder_seqs, axis=1)
     batch['aatype'][:,:,-binder_length:] = np.expand_dims(int_binder_seqs, axis=1)
@@ -387,7 +388,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, binder_length, num_AAs, r
 
     return batch
 
-def get_loss(prediction_result, binder_length, target_length):
+def get_loss(bi, prediction_result, binder_lengths, target_length):
     '''Predict and calculate loss
     '''
 
@@ -418,6 +419,7 @@ def get_loss(prediction_result, binder_length, target_length):
 
 
     #Divide by receptor/peptide
+    binder_length = binder_lengths[bi]
     total_length = target_length+binder_length
     pdb.set_trace()
     u_resnos = np.unique(extracted_resnos)[:total_length]
@@ -672,19 +674,23 @@ def design_binder(config,
 
         t_0 = time.time()
         if niter%resample_every_n==0:
-            #Reload batch
-            init_feature_dicts = [init_features(int_binder_seqs[i], MSA_feats, binder_length, config) for i in range(batch_size)]
-            batch = {}
-            for key in init_feature_dicts[0]:
-                batch[key] = np.array([init_feature_dicts[x][key] for x in range(batch_size)])
-                batch[key] = np.reshape(batch[key], (batch_size, 1, *batch[key].shape[1:]))
+            #Reload batch to resample MSA
+            print("--- Running init_features in parallel ---")
+            t0 = time.time()
+            init_feature_dicts = parallel_map(func=init_features,
+                                    iter_args=int_binder_seqs,
+                                    constant_args=(MSA_feats, config),
+                                    max_workers=max_workers)
 
-            batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
-            batch['num_iter_recycling'][:] = num_recycles
+            #Make the batch uniform in length (according to the longest target)
+            print('Making batch uniform...')
+            batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
+
         else:
+            print("--- Updating features ---")
             #Update feats with binder seq
             t_0 = time.time()
-            batch = update_peptide_batch_feats(batch, np.array(int_binder_seqs), binder_length, num_AAs, restype_atom_mappings)
+            batch = update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings)
         print('Making new feats took', time.time() - t_0,'s')
 
         #Predict - vmap over batch dim
@@ -692,9 +698,14 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Prediction took', time.time() - t_0,'s')
 
+        pdb.set_trace()
         #Get loss
+        print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
-        iter_loss_metrics = [get_loss(prediction_result, i, binder_length) for i in range(batch_size)]
+        iter_loss_metrics = parallel_map(func=get_loss,
+                                iter_args=np.arange(batch_size),
+                                constant_args=(prediction_result, binder_lengths, target_length),
+                                max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
 
         t_0 = time.time()
