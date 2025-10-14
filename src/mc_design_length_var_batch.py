@@ -867,7 +867,6 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
                 'final_atom_mask': numpy_pred_result['structure_module']['final_atom_mask'][i]}
             }
     # Add the predicted LDDT in the b-factor column.
-    pdb.set_trace()
     plddt_per_pos = np.sum(softmax(result['predicted_lddt'], axis=-1) * bin_centers[None, :], axis=-1)
     plddt_b_factors = np.repeat(plddt_per_pos[:, None], residue_constants.atom_type_num, axis=-1)
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
