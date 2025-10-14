@@ -1,26 +1,6 @@
 import json
 import os
 
-def suppress_jax_warnings():
-    """
-    Suppresses common JAX/XLA/TensorFlow log messages
-    like 'absl::InitializeLog()' and 'MLIR V1 optimization pass is not enabled'.
-    """
-    # 1. Suppress 'absl::InitializeLog()' and 'MLIR V1' messages (I0000 logs)
-    # GLOG_minloglevel=2 sets the minimum logging level to 'ERROR'.
-    # 0:INFO, 1:WARNING, 2:ERROR, 3:FATAL
-    os.environ["GLOG_minloglevel"] = "2"
-
-    # 2. Suppress gRPC-related warnings (often related to absl logs)
-    os.environ["GRPC_VERBOSITY"] = "ERROR"
-
-    # 3. Suppress JAX-specific warnings/deprecations (optional, but good practice)
-    os.environ["JAX_PLATFORMS"] = "cpu,gpu" # Explicitly specify platforms
-    # os.environ["JAX_CPP_MIN_LOG_LEVEL"] = "2" # Can also be used for suppression
-
-# Run this function at the very beginning of your script
-suppress_jax_warnings()
-
 import warnings
 import pathlib
 import pickle
@@ -703,7 +683,6 @@ def design_binder(config,
         #Check GPU utilisation
         check_gpu_memory_and_utilization(batch_size)
 
-        pdb.set_trace()
         #Save all init
         t0 = time.time()
         parallel_map(func=save_structure,
