@@ -859,7 +859,6 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
 
     #Save structure
-    pdb.set_trace()
     save_feats = {'aatype':batch['aatype'][i], 'residue_index':batch['residue_index'][i]}
     result = {'predicted_lddt':numpy_pred_result['predicted_lddt'][i],
             'structure_module':
@@ -868,8 +867,7 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
             }
     # Add the predicted LDDT in the b-factor column.
     pdb.set_trace()
-
-    plddt_per_pos = np.sum(softmax(plddt_logits[i]) * bin_centers[None, :], axis=-1)
+    plddt_per_pos = np.sum(softmax(result['predicted_lddt'], axis=-1) * bin_centers[None, :], axis=-1)
     plddt_b_factors = np.repeat(plddt_per_pos[:, None], residue_constants.atom_type_num, axis=-1)
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
     unrelaxed_pdb = protein.to_pdb(unrelaxed_protein)
