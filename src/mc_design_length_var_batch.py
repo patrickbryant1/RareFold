@@ -62,6 +62,63 @@ parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 ##############FUNCTIONS##############
+
+def check_gpu_memory_and_utilization(batch_size):
+    """
+    Checks and prints the memory statistics for the first available GPU in JAX.
+
+    NOTE: JAX's default pre-allocation means 'Free Memory' refers to
+    the space within the memory JAX has already reserved (e.g., 75% of total VRAM).
+    """
+
+    # 1. Get the list of all available devices
+    devices = jax.devices('gpu')
+
+    if not devices:
+        print("No JAX-enabled GPU devices found.")
+        return
+
+    # 2. Select the first GPU
+    gpu = devices[0]
+
+    # 3. Get the memory statistics dictionary, provides memory metrics in bytes.
+    memory_stats = gpu.memory_stats()
+    print(f"--- GPU Device: {gpu.device_kind} ({gpu.id}) ---")
+
+    # 4. Extract and convert key statistics to GB
+    # Total memory JAX has reserved (bytes_limit, typically 75% of VRAM)
+    total_reserved_bytes = memory_stats.get('bytes_limit')
+    total_reserved_gb = total_reserved_bytes / (1024**3) if total_reserved_bytes else 0
+
+    # Memory currently in use by JAX arrays/executables
+    used_bytes = memory_stats.get('bytes_in_use')
+    used_gb = used_bytes / (1024**3) if used_bytes else 0
+
+    # Memory that is free within the JAX-reserved pool
+    free_bytes = total_reserved_bytes - used_bytes
+    free_gb = free_bytes / (1024**3) if free_bytes else 0
+
+    # Calculate a rough utilization based on JAX's reserved pool
+    utilization = (used_gb / total_reserved_gb) * 100 if total_reserved_gb else 0
+
+    print(f"Total JAX-Reserved Memory: {total_reserved_gb:.2f} GB")
+    print(f"Memory Currently Used:     {used_gb:.2f} GB")
+    print(f"Memory Available (Free):   {free_gb:.2f} GB")
+    print(f"GPU Utilization (JAX Pool): {utilization:.2f}%")
+
+    # Note: 'peak_bytes_allocated' shows the highest usage reached since the process started.
+    peak_bytes = memory_stats.get('peak_bytes_allocated')
+    peak_gb = peak_bytes / (1024**3) if peak_bytes else 0
+    print(f"Peak Memory Used:          {peak_gb:.2f} GB")
+
+    #Suggest a batch size based on usage
+    mem_per_thread = used_gb/batch_size #Note that this is not the effective batch size
+    possible_increase = np.floor(free_gb/mem_per_thread)
+    print('Possible to increase the batch size by', possible_increase, 'if keeping the same lengths.')
+
+
+
+
 ##########INPUT DATA#########
 def process_features(raw_features, config, random_seed):
     """Processes features to prepare for feeding them into the model.
@@ -625,6 +682,10 @@ def design_binder(config,
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took',time.time()-t0,'s')
+
+        #Check GPU utilisation
+        check_gpu_memory_and_utilization(batch_size)
+
         #Save all init
         t0 = time.time()
         parallel_map(func=save_structure,
@@ -780,7 +841,7 @@ def save_structure(i, batch, prediction_result, pred_id, outdir):
     unrelaxed_protein = protein.from_prediction(features=save_feats, result=result,  b_factors=plddt_b_factors)
     unrelaxed_pdb = protein.to_pdb(unrelaxed_protein)
     #Save per binder length
-    binder_length =batch['binder_length'][i]
+    binder_length = int(batch['binder_length'][i][0][0])
     binder_outdir = outdir+'/'+str(binder_length)+'/'
     if not os.path.exists(binder_outdir):
         os.mkdir(binder_outdir)
