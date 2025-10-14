@@ -1,12 +1,5 @@
 import os
 
-import multiprocessing
-# Set the start method to 'spawn' FIRST to avoid the CUDA/fork conflict
-# This ensures that any subsequent ProcessPoolExecutor starts clean processes.
-multiprocessing.set_start_method('spawn', force=True)
-
-import warnings
-import pathlib
 import pickle
 import random
 import sys
@@ -102,7 +95,49 @@ def check_gpu_memory_and_utilization(batch_size):
     print('Memory per thread', mem_per_thread, 'if keeping the same lengths.')
 
 
+def _wrapper_func(args):
+    """
+    When you use ProcessPoolExecutor, Python needs to pickle (serialise) the function you’re sending to each subprocess.
+    Wrapper_func needs to be defined outside another function (parallel_map).
+    If inside → That makes it a local function, and local (nested) functions cannot be pickled.
+    """
+    func, iter_arg, constant_args = args
+    return func(iter_arg, *constant_args)
 
+def parallel_map(
+    func: Callable,
+    iter_args: Iterable,
+    constant_args: tuple = (),
+    max_workers: int = None,
+    use_processes: bool = True, #If False - not true threading, threading only within each CPU core
+) -> List[Any]:
+    """
+    Executes a function in parallel using threads or processes.
+
+    The function signature is expected to be:
+    func(iter_arg, *constant_args)
+
+    Args:
+        func: The function to execute.
+        iter_args: An iterable of the arguments that change for each call.
+        constant_args: A tuple of arguments that are fixed for every call.
+        max_workers: The maximum number of threads to use. Set this to min(num_cpus, eff_batch_size)
+
+    Returns:
+        A list of results, ordered by the input iterable.
+    """
+
+    Executor = (
+        concurrent.futures.ProcessPoolExecutor if use_processes
+        else concurrent.futures.ThreadPoolExecutor
+    )
+
+    with Executor(max_workers=max_workers) as executor:
+        results = list(
+            executor.map(_wrapper_func, [(func, iter_arg, constant_args) for iter_arg in iter_args])
+        )
+
+    return results
 
 ##########INPUT DATA#########
 def process_features(raw_features, config, random_seed):
@@ -494,49 +529,7 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
 
     return closest_dists_peptide.mean(), binder_plDDT.mean()*100, inter_clash_frac, intra_clash_frac/10
 
-def _wrapper_func(args):
-    """
-    When you use ProcessPoolExecutor, Python needs to pickle (serialise) the function you’re sending to each subprocess.
-    Wrapper_func needs to be defined outside another function (parallel_map).
-    If inside → That makes it a local function, and local (nested) functions cannot be pickled.
-    """
-    func, iter_arg, constant_args = args
-    return func(iter_arg, *constant_args)
 
-def parallel_map(
-    func: Callable,
-    iter_args: Iterable,
-    constant_args: tuple = (),
-    max_workers: int = None,
-    use_processes: bool = True, #If False - not true threading, threading only within each CPU core
-) -> List[Any]:
-    """
-    Executes a function in parallel using threads or processes.
-
-    The function signature is expected to be:
-    func(iter_arg, *constant_args)
-
-    Args:
-        func: The function to execute.
-        iter_args: An iterable of the arguments that change for each call.
-        constant_args: A tuple of arguments that are fixed for every call.
-        max_workers: The maximum number of threads to use. Set this to min(num_cpus, eff_batch_size)
-
-    Returns:
-        A list of results, ordered by the input iterable.
-    """
-
-    Executor = (
-        concurrent.futures.ProcessPoolExecutor if use_processes
-        else concurrent.futures.ThreadPoolExecutor
-    )
-
-    with Executor(max_workers=max_workers) as executor:
-        results = list(
-            executor.map(_wrapper_func, [(func, iter_arg, constant_args) for iter_arg in iter_args])
-        )
-
-    return results
 
 def design_binder(config,
                 predict_id,
