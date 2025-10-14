@@ -486,7 +486,7 @@ class StructureModule(hk.Module):
 
     atom14_pred_positions = r3.vecs_to_tensor(output['sc']['atom_pos'])[-1]
     ret['final_atom14_positions'] = atom14_pred_positions  # (N, 14, 3)
-    ret['final_atom14_mask'] = batch['atom14_atom_exists']  # (N, 14)
+
 
     atom37_pred_positions = all_atom.atom14_to_atom37(atom14_pred_positions,
                                                       batch)
@@ -497,6 +497,8 @@ class StructureModule(hk.Module):
     ret['final_affines'] = ret['traj'][-1]
 
     if self.compute_loss:
+      ret['final_atom14_mask'] = batch['atom14_atom_exists']  # (N, 14)
+
       return ret
     else:
       no_loss_features = ['final_atom_positions', 'final_atom_mask',

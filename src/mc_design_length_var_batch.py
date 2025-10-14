@@ -255,8 +255,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
     batch['num_iter_recycling'][:] = num_recycles
 
     print(feats_i.keys())
-    pdb.set_trace()
-
 
     return batch
 
