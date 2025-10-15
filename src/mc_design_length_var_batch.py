@@ -826,31 +826,24 @@ def design_binder(config,
         score_df.to_csv(outdir+'metrics.csv', index=None)
         print('Adding metrics took', np.round(time.time() - t_0,2),'s')
 
+        #Print some stats
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
+
+        #Save structures
+        t0 = time.time()
+        parallel_map(func=save_structure,
+                    iter_args=np.arange(len(lengths_in_batch)),
+                    constant_args=(batch, numpy_pred_result, str(niter), outdir),
+                    max_workers=max_workers)
+
+        print('Saving took', np.round(time.time()-t0,2) ,'s')
+
         #Reset starting point to min
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
         int_binder_seqs = []
-        #Save
-        t0 = time.time()
         for i in range(len(best_inds)):
             #Reset starting point to min
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
-            if save_best_only=='True':
-                #Check if improvement --> save
-                if best_inds[i]==len(sequence_scores['loss'])-1:
-                    #Save structures
-                    parallel_map(func=save_structure,
-                                iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(batch, numpy_pred_result, str(niter), outdir),
-                                max_workers=max_workers)
-            else:
-                #Save structures
-                parallel_map(func=save_structure,
-                            iter_args=np.arange(len(lengths_in_batch)),
-                            constant_args=(batch, numpy_pred_result, str(niter), outdir),
-                            max_workers=max_workers)
-
-        print('Saving took', np.round(time.time()-t0,2) ,'s')
 
 
 
