@@ -709,7 +709,7 @@ def design_binder(config,
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(prediction_result, lengths_in_batch, target_length),
+                                constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
         pdb.set_trace()
