@@ -471,8 +471,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
     for i in range(len(lengths_in_batch)):
         bl = lengths_in_batch[i]
         #Assign to target feats
-        pdb.set_trace()
-        batch['target_feat'][i,:,tl:tl+bl:,:-1] = onhot_binder_seqs[i][:bl]
+        batch['target_feat'][i,:,tl:tl+bl,:] = onhot_binder_seqs[i][:bl]
         #aatype
         batch['aatype'][i,:,tl:tl+bl] = int_binder_seqs[i]
         #Update atom mappings
