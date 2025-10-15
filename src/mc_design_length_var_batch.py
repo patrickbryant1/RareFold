@@ -712,7 +712,7 @@ def design_binder(config,
                     iter_args=np.arange(len(lengths_in_batch)),
                     constant_args=(batch, numpy_pred_result, 'init', outdir),
                     max_workers=max_workers)
-        print('Saving init took',time.time()-t0,'s')
+        print('Saving init took', np.round(time.time()-t0,2) ,'s')
 
         #Get loss
         print("--- Running loss calculations in parallel ---")
@@ -829,9 +829,11 @@ def design_binder(config,
         #Reset starting point to min
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
         int_binder_seqs = []
+        #Save
+        t0 = time.time()
         for i in range(len(best_inds)):
+            #Reset starting point to min
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
-
             if save_best_only=='True':
                 #Check if improvement --> save
                 if best_inds[i]==len(sequence_scores['loss'])-1:
@@ -847,6 +849,7 @@ def design_binder(config,
                             constant_args=(batch, numpy_pred_result, str(niter), outdir),
                             max_workers=max_workers)
 
+        print('Saving took', np.round(time.time()-t0,2) ,'s')
 
 
 
