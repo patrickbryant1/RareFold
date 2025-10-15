@@ -1,6 +1,12 @@
 import os
 os.environ["GLOG_minloglevel"] = "3"
-
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    message="os.fork() was called",
+    category=RuntimeWarning,
+    module="multiprocessing.popen_fork"
+)
 import pickle
 import random
 import sys
@@ -825,6 +831,7 @@ def design_binder(config,
         print('Adding metrics took', np.round(time.time() - t_0,2),'s')
 
         #Print some stats
+        print('---Metrics from step', niter, '---')
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
 
         #Save structures
