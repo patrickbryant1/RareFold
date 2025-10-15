@@ -721,7 +721,7 @@ def design_binder(config,
                                 iter_args=np.arange(len(lengths_in_batch)),
                                 constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
-        print('Loss calcs took', time.time() - t_0,'s')
+        print('Loss calcs took',np.round(time.time() - t_0, 2),'s')
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
         inter_clash_fracs = np.array([x[2] for x in iter_loss_metrics])
@@ -760,7 +760,7 @@ def design_binder(config,
 
         int_binder_seqs = [x[0] for x in mut_seqs]
         binder_seqs = [x[1] for x in mut_seqs]
-        print('Mutating sequences took', time.time() - t_0,'s')
+        print('Mutating sequences took', np.round(time.time() - t_0,2),'s')
 
         #Resample MSA or only update feats with mut_seqs
         if niter%resample_every_n==0:
@@ -776,20 +776,20 @@ def design_binder(config,
             print('Making batch uniform...')
             t0 = time.time()
             batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-            print('Making uniform batch took',time.time()-t0,'s')
+            print('Making uniform batch took', np.round(time.time()-t0,2) ,'s')
 
         else:
             print("--- Updating features ---")
             #Update feats with binder seq
             t_0 = time.time()
             batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
-            print('Making new feats took', time.time() - t_0,'s')
+            print('Making new feats took', np.round(time.time() - t_0,2),'s')
 
         #Predict - vmap over batch dim
         print('Predicting...')
         t_0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
-        print('Prediction took', time.time() - t_0,'s')
+        print('Prediction took', np.round(time.time() - t_0,2),'s')
 
 
         #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
@@ -802,8 +802,8 @@ def design_binder(config,
                                 iter_args=np.arange(len(lengths_in_batch)),
                                 constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
-        print('Loss calcs took', time.time() - t_0,'s')
-        pdb.set_trace()
+        print('Loss calcs took', np.round(time.time() - t_0, 2),'s')
+
         t_0 = time.time()
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
@@ -823,8 +823,8 @@ def design_binder(config,
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
-        print('Adding metrics took', time.time() - t_0,'s')
-        pdb.set_trace()
+        print('Adding metrics took', np.round(time.time() - t_0,2),'s')
+
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
         #Reset starting point to min
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
