@@ -442,7 +442,7 @@ def jax_independent_result(prediction_result):
     return numpy_pred_result
 
 
-def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, num_AAs, restype_atom_mappings):
+def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num_AAs, restype_atom_mappings):
     """Update only the peptide batch feats that affect the prediction
     int_seq: batch_size,1,L
     residx_atom14_to_atom37: batch_size,1,L,25
@@ -455,32 +455,33 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, num_AAs
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
     pdb.set_trace()
-    padded_seqs = [x+[20]*(max_len-len(x)) for x in int_binder_seqs]
-
-    pdb.set_trace()
-    padded_feat = np.stack([np.pad(np.eye(NUM_AAS)[s], ((0, max_len - len(s)), (0, 0)), 'constant') for s in int_binder_seqs]
-    pdb.set_trace()
-
-    batch['target_feat'][:,:,-max_len:,:] = np.expand_dims(target_feat, axis=1)
-    batch['int_seq'][:,:,-max_len:] = np.expand_dims(int_binder_seqs, axis=1)
-    batch['aatype'][:,:,-max_len:] = np.expand_dims(int_binder_seqs, axis=1)
+    padded_seqs = [x+[20]*(max_len-len(x)) for x in int_binder_seqs] #Index 20 is UNK
 
     # create the mapping for (residx, atom14) --> atom37, i.e. an array
     # with shape (num_res, 14) containing the atom37 indices for this protein)
-    #aatype = np.array([np.eye(num_AAs)[x] for x in int_binder_seqs])
     residx_atom14_to_atom37 = tf.gather(restype_atom_mappings['restype_atom14_to_atom37'], int_binder_seqs)
     residx_atom14_mask = tf.gather(restype_atom_mappings['restype_atom14_mask'], int_binder_seqs)
-
-    #Update batch
-    batch['residx_atom14_to_atom37'][:,:,-max_len:,:] = np.expand_dims(residx_atom14_to_atom37, axis=1)
-    batch['atom14_atom_exists'][:,:,-max_len:,:] = np.expand_dims(residx_atom14_mask, axis=1)
-
-    # create the gather indices for mapping back
+    # create the gather indices for mapping back to atom14 from atom37
     residx_atom37_to_atom14 = tf.gather(restype_atom_mappings['restype_atom37_to_atom14'], int_binder_seqs)
-    batch['residx_atom37_to_atom14'][:,:,-max_len:,:] = np.expand_dims(residx_atom37_to_atom14, axis=1)
-
     residx_atom37_mask = tf.gather(restype_atom_mappings['restype_atom37_mask'], int_binder_seqs)
-    batch['atom37_atom_exists'][:,:,-binder_length:,:] = np.expand_dims(residx_atom37_mask, axis=1)
+
+    #Create onehot mappings
+    onhot_binder_seqs = np.array([np.eye(num_AAs)[x] for x in int_binder_seqs])
+
+    #Update each batch item according to the length tracker
+    for i in range(len(lengths_in_batch)):
+        bl = lengths_in_batch[i]
+        #Assign to target feats
+        batch['target_feat'][i,:,tl:tl+bl:,:-1] = onhot_binder_seqs[i][:bl]
+        #aatype
+        batch['aatype'][i,:,tl:tl+binder_length:] = int_binder_seqs[i]
+        #Update atom mappings
+        batch['residx_atom14_to_atom37'][i,:,tl:tl+binder_length:,:] = residx_atom14_to_atom37[i]
+        batch['atom14_atom_exists'][i,:,tl:tl+binder_length:,:] = residx_atom14_mask[i]
+        batch['residx_atom37_to_atom14'][i,:,tl:tl+binder_length:,:] = residx_atom37_to_atom14[i]
+        batch['atom37_atom_exists'][i,:,rl:tl+binder_length:,:] = residx_atom37_mask[i]
+
+    pdb.set_trace()
 
     return batch
 
@@ -785,7 +786,7 @@ def design_binder(config,
             print("--- Updating features ---")
             #Update feats with binder seq
             t_0 = time.time()
-            batch = update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings)
+            batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
             print('Making new feats took', time.time() - t_0,'s')
 
         #Predict - vmap over batch dim
