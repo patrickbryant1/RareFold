@@ -55,7 +55,6 @@ parser.add_argument('--batch_size', nargs=1, type= int, default=sys.stdin, help 
 parser.add_argument('--params', nargs=1, type= str, default=sys.stdin, help = 'Params to use.')
 parser.add_argument('--rare_AAs', nargs=1, type= str, default=sys.stdin, help = 'List of rare amino acids to use in the design.')
 parser.add_argument('--cyclic_offset', nargs=1, type= str, default=sys.stdin, help = 'Use a cyclic offset for the binder (True) or not (False).')
-parser.add_argument('--save_best_only', nargs=1, type= str, default=sys.stdin, help = 'Save only design improvements (True), otherwise save all.')
 parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help = 'Number of CPU threads.')
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
@@ -558,7 +557,6 @@ def design_binder(config,
                 batch_size=1,
                 params=None,
                 rare_AAs=['MSE'],
-                save_best_only='True',
                 max_workers=None,
                 outdir=None):
     """Design a binder
@@ -904,7 +902,6 @@ if cyclic_offset=='True':
     cyclic_offset=True
 else:
     cyclic_offset=None
-save_best_only = args.save_best_only[0]
 max_workers = args.max_workers[0]
 outdir = args.outdir[0]
 
@@ -923,6 +920,5 @@ design_binder(config.CONFIG,
             batch_size=batch_size,
             params=params,
             rare_AAs=rare_AAs,
-            save_best_only=save_best_only,
             max_workers=max_workers,
             outdir=outdir)
