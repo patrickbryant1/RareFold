@@ -647,7 +647,6 @@ def design_binder(config,
             int_binder_seqs.append(seq_i)
             lengths_in_batch.append(len(seq_i))
 
-        pdb.set_trace()
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
@@ -660,8 +659,6 @@ def design_binder(config,
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
         print('Making uniform batch took',time.time()-t0,'s')
-        #Check atom37 mask + score_df
-        pdb.set_trace()
 
     else:
         print('--- No previous run found. Starting new... ---')
@@ -669,7 +666,11 @@ def design_binder(config,
         #Initialize weights - these are the amino acid probabilities
         #Also returns the peptide_sequence corresponding to the weights
         t0 = time.time()
-        init_binder_seqs = [initialize_weights(x, batch_size, all_AA_triplets, selected_AA_index) for x in binder_lengths]
+        init_binder_seqs = parallel_map(func=initialize_weights,
+                                iter_args=binder_lengths,
+                                constant_args=(batch_size, all_AA_triplets, selected_AA_index),
+                                max_workers=max_workers)
+
         #Reformat to batch format
         binder_seqs, int_binder_seqs, lengths_in_batch = [], [], []
         for i in range(len(binder_lengths)):
@@ -758,26 +759,28 @@ def design_binder(config,
         print('Mutating sequences took', time.time() - t_0,'s')
 
         pdb.set_trace()
-        t_0 = time.time()
+
         if niter%resample_every_n==0:
             #Reload batch to resample MSA
-            print("--- Running init_features in parallel ---")
+            print("--- Resampling MSA ---")
             t0 = time.time()
             init_feature_dicts = parallel_map(func=init_features,
                                     iter_args=int_binder_seqs,
                                     constant_args=(MSA_feats, config),
                                     max_workers=max_workers)
-
+            print('Resampling MSA took',time.time()-t0,'s')
             #Make the batch uniform in length (according to the longest target)
             print('Making batch uniform...')
+            t0 = time.time()
             batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
+            print('Making uniform batch took',time.time()-t0,'s')
 
         else:
             print("--- Updating features ---")
             #Update feats with binder seq
             t_0 = time.time()
             batch = update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings)
-        print('Making new feats took', time.time() - t_0,'s')
+            print('Making new feats took', time.time() - t_0,'s')
 
         #Predict - vmap over batch dim
         t_0 = time.time()
