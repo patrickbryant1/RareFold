@@ -454,32 +454,31 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
 
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
-    pdb.set_trace()
     padded_seqs = [x+[20]*(max_len-len(x)) for x in int_binder_seqs] #Index 20 is UNK
 
     # create the mapping for (residx, atom14) --> atom37, i.e. an array
     # with shape (num_res, 14) containing the atom37 indices for this protein)
-    residx_atom14_to_atom37 = tf.gather(restype_atom_mappings['restype_atom14_to_atom37'], int_binder_seqs)
-    residx_atom14_mask = tf.gather(restype_atom_mappings['restype_atom14_mask'], int_binder_seqs)
+    residx_atom14_to_atom37 = tf.gather(restype_atom_mappings['restype_atom14_to_atom37'], padded_seqs)
+    residx_atom14_mask = tf.gather(restype_atom_mappings['restype_atom14_mask'], padded_seqs)
     # create the gather indices for mapping back to atom14 from atom37
-    residx_atom37_to_atom14 = tf.gather(restype_atom_mappings['restype_atom37_to_atom14'], int_binder_seqs)
-    residx_atom37_mask = tf.gather(restype_atom_mappings['restype_atom37_mask'], int_binder_seqs)
+    residx_atom37_to_atom14 = tf.gather(restype_atom_mappings['restype_atom37_to_atom14'], padded_seqs)
+    residx_atom37_mask = tf.gather(restype_atom_mappings['restype_atom37_mask'], padded_seqs)
 
     #Create onehot mappings
-    onhot_binder_seqs = np.array([np.eye(num_AAs)[x] for x in int_binder_seqs])
+    onhot_binder_seqs = [np.eye(num_AAs)[x] for x in int_binder_seqs]
 
     #Update each batch item according to the length tracker
     for i in range(len(lengths_in_batch)):
         bl = lengths_in_batch[i]
         #Assign to target feats
+        pdb.set_trace()
         batch['target_feat'][i,:,tl:tl+bl:,:-1] = onhot_binder_seqs[i][:bl]
         #aatype
-        batch['aatype'][i,:,tl:tl+binder_length:] = int_binder_seqs[i]
+        batch['aatype'][i,:,tl:tl+bl] = int_binder_seqs[i]
         #Update atom mappings
-        batch['residx_atom14_to_atom37'][i,:,tl:tl+binder_length:,:] = residx_atom14_to_atom37[i]
-        batch['atom14_atom_exists'][i,:,tl:tl+binder_length:,:] = residx_atom14_mask[i]
-        batch['residx_atom37_to_atom14'][i,:,tl:tl+binder_length:,:] = residx_atom37_to_atom14[i]
-        batch['atom37_atom_exists'][i,:,rl:tl+binder_length:,:] = residx_atom37_mask[i]
+        batch['residx_atom14_to_atom37'][i,:,tl:tl+bl,:] = residx_atom14_to_atom37[i][:bl]
+        batch['residx_atom37_to_atom14'][i,:,tl:tl+bl,:] = residx_atom37_to_atom14[i][:bl]
+        batch['atom37_atom_exists'][i,:,tl:tl+bl,:] = residx_atom37_mask[i][:bl]
 
     pdb.set_trace()
 
