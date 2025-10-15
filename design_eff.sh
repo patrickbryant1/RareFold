@@ -16,11 +16,11 @@ fi
 
 
 #############PARAMS FOR DESIGN#############
-MAX_RECYCLES=1 #max_recycles (default=3)
+MAX_RECYCLES=8 #max_recycles (default=3)
 BINDER_LENGTHS="10,11,12"
 NITER=1000
 RESAMPLE_FREQ=100 #How often to resample the MSA
-BATCH_SIZE=6 #The batch size determines how many design threads are run simultaneously
+BATCH_SIZE=5 #The batch size determines how many design threads are run simultaneously
 PARAMS=$BASE/data/params/finetuned_params25000.npy
 RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threeletter code for the NCAA you want to use for design
 #You can also design with the regular AAs by specifying e.g. only ALA (only the NCAAs will be added onto the regular for design)
@@ -33,7 +33,6 @@ RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threelet
 # 'FTR', 'LLP', 'CAF', 'CMH', 'MHO'
 
 CYCLIC=True #Set to False if you want to design linear binders
-SAVE_BEST_ONLY=False #If to only save improved designs (set True, save space+speed) or all
 MAX_WORKERS=18
 OUTDIR=$DATADIR/
 
@@ -60,7 +59,6 @@ python3 $BASE/src/mc_design_length_var_batch.py --predict_id $ID \
 --params $PARAMS \
 --rare_AAs $RARE_AAS \
 --cyclic_offset $CYCLIC \
---save_best_only $SAVE_BEST_ONLY \
 --max_workers $MAX_WORKERS \
 --outdir $OUTDIR
 
