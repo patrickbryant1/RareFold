@@ -662,7 +662,7 @@ def design_binder(config,
         print('Making batch uniform...')
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-        print('Making uniform batch took',time.time()-t0,'s')
+        print('Making uniform batch took', np.round(time.time()-t0,2) ,'s')
 
     else:
         print('--- No previous run found. Starting new... ---')
