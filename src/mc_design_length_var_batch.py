@@ -40,7 +40,7 @@ os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 
 parser = argparse.ArgumentParser(description = """Design a binder using trained weights.
                                                   This particular script allows for length variation within the same batch (GPU).
-                                                  Function calls are also threaded for less GPU off time.
+                                                  Function calls are also threaded across CPU cores for less GPU off time.
                                                   """)
 
 
@@ -442,7 +442,7 @@ def jax_independent_result(prediction_result):
     return numpy_pred_result
 
 
-def update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_mappings):
+def update_peptide_batch_feats(batch, int_binder_seqs, tl, num_AAs, restype_atom_mappings):
     """Update only the peptide batch feats that affect the prediction
     int_seq: batch_size,1,L
     residx_atom14_to_atom37: batch_size,1,L,25
@@ -452,12 +452,13 @@ def update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_map
     atom14_atom_exists
     """
 
-    pdb.set_trace()
-    target_feat = [np.eye(num_AAs)[x] for x in int_binder_seqs]
-    pdb.set_trace()
-    batch['target_feat'][:,:,-binder_length:,:] = np.expand_dims(target_feat, axis=1)
-    batch['int_seq'][:,:,-binder_length:] = np.expand_dims(int_binder_seqs, axis=1)
-    batch['aatype'][:,:,-binder_length:] = np.expand_dims(int_binder_seqs, axis=1)
+    for i in range(len(int_binder_seqs)):
+        seq_i = int_binder_seqs[i]
+        bl = len(seq_i)
+        pdb.set_trace()
+        batch['target_feat'][i,:,tl:tl+bl,:] = np.expand_dims(np.eye(num_AAs)[seq_i], axis=1)
+        batch['int_seq'][i,:,tl:tl+bl] = np.expand_dims(int_binder_seqs, axis=1)
+        batch['aatype']i:,:,tl:tl+bl] = np.expand_dims(int_binder_seqs, axis=1)
 
     # create the mapping for (residx, atom14) --> atom37, i.e. an array
     # with shape (num_res, 14) containing the atom37 indices for this protein)
