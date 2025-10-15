@@ -452,7 +452,8 @@ def update_peptide_batch_feats(batch, int_binder_seqs, num_AAs, restype_atom_map
     atom14_atom_exists
     """
 
-    target_feat = np.array([np.eye(num_AAs)[x] for x in int_binder_seqs])
+    pdb.set_trace()
+    target_feat = [np.eye(num_AAs)[x] for x in int_binder_seqs]
     pdb.set_trace()
     batch['target_feat'][:,:,-binder_length:,:] = np.expand_dims(target_feat, axis=1)
     batch['int_seq'][:,:,-binder_length:] = np.expand_dims(int_binder_seqs, axis=1)
@@ -758,8 +759,7 @@ def design_binder(config,
         binder_seqs = [x[1] for x in mut_seqs]
         print('Mutating sequences took', time.time() - t_0,'s')
 
-        pdb.set_trace()
-
+        #Resample MSA or only update feats with mut_seqs
         if niter%resample_every_n==0:
             #Reload batch to resample MSA
             print("--- Resampling MSA ---")
