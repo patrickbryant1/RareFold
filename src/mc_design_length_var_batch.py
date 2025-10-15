@@ -479,8 +479,6 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
         batch['residx_atom37_to_atom14'][i,:,tl:tl+bl,:] = residx_atom37_to_atom14[i][:bl]
         batch['atom37_atom_exists'][i,:,tl:tl+bl,:] = residx_atom37_mask[i][:bl]
 
-    pdb.set_trace()
-
     return batch
 
 def get_loss(bi, prediction_result, binder_lengths, target_length):
@@ -788,11 +786,12 @@ def design_binder(config,
             print('Making new feats took', time.time() - t_0,'s')
 
         #Predict - vmap over batch dim
+        print('Predicting...')
         t_0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Prediction took', time.time() - t_0,'s')
 
-        pdb.set_trace()
+
         #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
         numpy_pred_result = jax_independent_result(prediction_result)
 
@@ -804,7 +803,7 @@ def design_binder(config,
                                 constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
-
+        pdb.set_trace()
         t_0 = time.time()
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
@@ -825,7 +824,7 @@ def design_binder(config,
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
         print('Adding metrics took', time.time() - t_0,'s')
-
+        pdb.set_trace()
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
         #Reset starting point to min
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
@@ -839,13 +838,13 @@ def design_binder(config,
                     #Save structures
                     parallel_map(func=save_structure,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(batch, prediction_result, 'init', outdir),
+                                constant_args=(batch, numpy_pred_result, str(niter), outdir),
                                 max_workers=max_workers)
             else:
                 #Save structures
                 parallel_map(func=save_structure,
                             iter_args=np.arange(len(lengths_in_batch)),
-                            constant_args=(batch, prediction_result, 'init', outdir),
+                            constant_args=(batch, numpy_pred_result, str(niter), outdir),
                             max_workers=max_workers)
 
 
