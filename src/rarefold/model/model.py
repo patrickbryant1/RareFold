@@ -1,7 +1,6 @@
 """Code for constructing the model."""
 from typing import Any, Mapping, Optional, Union
 
-from absl import logging
 from rarefold.common import confidence
 from rarefold.model import features
 from rarefold.model import modules
@@ -68,7 +67,7 @@ class RunModel:
       rng = jax.random.PRNGKey(random_seed)
       self.params = hk.data_structures.to_mutable_dict(
           self.init(rng, feat))
-      logging.warning('Initialized parameters randomly')
+
 
   def process_features(
       self,
@@ -97,10 +96,7 @@ class RunModel:
 
   def eval_shape(self, feat: features.FeatureDict) -> jax.ShapeDtypeStruct:
     self.init_params(feat)
-    logging.info('Running eval_shape with shape(feat) = %s',
-                 tree.map_structure(lambda x: x.shape, feat))
     shape = jax.eval_shape(self.apply, self.params, jax.random.PRNGKey(0), feat)
-    logging.info('Output shape was %s', shape)
     return shape
 
   def predict(self, feat: features.FeatureDict) -> Mapping[str, Any]:
@@ -114,14 +110,12 @@ class RunModel:
       A dictionary of model outputs.
     """
     self.init_params(feat)
-    logging.info('Running predict with shape(feat) = %s',
-                 tree.map_structure(lambda x: x.shape, feat))
+
     result = self.apply(self.params, jax.random.PRNGKey(0), feat)
     # This block is to ensure benchmark timings are accurate. Some blocking is
     # already happening when computing get_confidence_metrics, and this ensures
     # all outputs are blocked on.
     jax.tree_map(lambda x: x.block_until_ready(), result)
     result.update(get_confidence_metrics(result))
-    logging.info('Output shape was %s',
-                 tree.map_structure(lambda x: x.shape, result))
+
     return result

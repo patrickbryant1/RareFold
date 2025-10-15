@@ -667,7 +667,7 @@ def design_binder(config,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
-        print('Init feats took',time.time()-t0,'s')
+        print('Init feats took', np.round(time.time()-t0,2) ,'s')
         print('Making batch uniform...')
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
