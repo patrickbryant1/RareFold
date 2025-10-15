@@ -10,6 +10,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import optax
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.compat.v1 as tf
 tf.config.set_visible_devices([], 'GPU')
 
