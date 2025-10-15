@@ -93,8 +93,7 @@ def check_gpu_memory_and_utilization(batch_size):
 
     #Suggest a batch size based on usage
     mem_per_thread = total_reserved_gb/batch_size #Note that this is not the effective batch size
-    print('Memory per thread', mem_per_thread, 'if keeping the same lengths.')
-
+    print(f"Memory per thread: {mem_per_thread:.2f} if keeping the binder lengths.")
 
 def _wrapper_func(args):
     """
@@ -358,11 +357,10 @@ def mutate_sequence(bi, onehot_binder_seqs, searched_seqs_all, all_AA_triplets, 
 
     #Select
     onehot_binder_seq = onehot_binder_seqs[bi]
-    searched_seqs = searched_seqs_all[:, bi]
-
-
     seqlen = len(onehot_binder_seq)
-    searched_seqs = [list(x) for x in searched_seqs]
+
+    searched_seqs = [seqs[bi] for seqs in searched_seqs_all]
+
     #Mutate seq
     seeds = [onehot_binder_seq]
     #Go through a shuffled version of the positions and aas
@@ -573,17 +571,6 @@ def design_binder(config,
         selected_AA_index.append(np.argwhere(all_AA_triplets==raa)[0][0])
     selected_AA_index = np.sort(np.unique(selected_AA_index))
 
-    #Initialize weights - these are the amino acid probabilities
-    #Also returns the peptide_sequence corresponding to the weights
-    init_binder_seqs = [initialize_weights(x, batch_size, all_AA_triplets, selected_AA_index) for x in binder_lengths]
-    #Reformat to batch format
-    binder_seqs, int_binder_seqs, lengths_in_batch = [], [], []
-    for i in range(len(binder_lengths)):
-        item = init_binder_seqs[i]
-        binder_seqs.extend(item[0])
-        int_binder_seqs.extend(item[1])
-        lengths_in_batch.extend([binder_lengths[i]]*batch_size)
-
     #Get target length
     target_length = len(MSA_feats['aatype'])
     print("--- Targeting a protein of length "+str(target_length)+" ---")
@@ -654,10 +641,13 @@ def design_binder(config,
 
         #Reset starting point to min
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
-        int_binder_seqs = []
+        int_binder_seqs, lengths_in_batch = [], []
         for i in range(len(best_inds)):
-            int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
+            seq_i = sequence_scores['int_seq'][best_inds[i]][i]
+            int_binder_seqs.append(seq_i)
+            lengths_in_batch.append(len(seq_i))
 
+        pdb.set_trace()
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
@@ -670,9 +660,24 @@ def design_binder(config,
         t0 = time.time()
         batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
         print('Making uniform batch took',time.time()-t0,'s')
+        #Check atom37 mask + score_df
+        pdb.set_trace()
 
     else:
         print('--- No previous run found. Starting new... ---')
+        print('--- Initialising sequences ---')
+        #Initialize weights - these are the amino acid probabilities
+        #Also returns the peptide_sequence corresponding to the weights
+        t0 = time.time()
+        init_binder_seqs = [initialize_weights(x, batch_size, all_AA_triplets, selected_AA_index) for x in binder_lengths]
+        #Reformat to batch format
+        binder_seqs, int_binder_seqs, lengths_in_batch = [], [], []
+        for i in range(len(binder_lengths)):
+            item = init_binder_seqs[i]
+            binder_seqs.extend(item[0]) #Add the batch_size list of binder seqs of length binder_length[i]
+            int_binder_seqs.extend(item[1])
+            lengths_in_batch.extend([binder_lengths[i]]*batch_size)
+        print('Init seqs took',np.round(time.time()-t0,2),'s')
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
@@ -693,7 +698,7 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took', np.round(time.time()-t0, 2),'s')
 
-        #Convert prediction result to be independent of jax - necessary for threading
+        #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
         numpy_pred_result = jax_independent_result(prediction_result)
 
         #Save all init
@@ -712,7 +717,6 @@ def design_binder(config,
                                 constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
-        pdb.set_trace()
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
         inter_clash_fracs = np.array([x[2] for x in iter_loss_metrics])
@@ -746,7 +750,7 @@ def design_binder(config,
         t_0 = time.time()
         mut_seqs = parallel_map(func=mutate_sequence,
                                 iter_args= np.arange(len(lengths_in_batch)),
-                                constant_args=(int_binder_seqs, np.array(sequence_scores['int_seq']), all_AA_triplets, selected_AA_index),
+                                constant_args=(int_binder_seqs, sequence_scores['int_seq'], all_AA_triplets, selected_AA_index),
                                 max_workers=max_workers)
 
         int_binder_seqs = [x[0] for x in mut_seqs]
@@ -781,12 +785,15 @@ def design_binder(config,
         print('Prediction took', time.time() - t_0,'s')
 
         pdb.set_trace()
+        #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
+        numpy_pred_result = jax_independent_result(prediction_result)
+
         #Get loss
         print("--- Running loss calculations in parallel ---")
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(prediction_result, lengths_in_batch, target_length),
+                                constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took', time.time() - t_0,'s')
 
