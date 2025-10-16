@@ -24,7 +24,7 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
     * [Design linear or cyclic peptide binders incorporating noncanonical amino acids](#design-linear-or-cyclic-peptide-binders-incorporating-noncanonical-amino-acids)
     * [Run the test case](#run-the-test-case)
         * [Step-by-Step Time Savings](#step-by-step-time-savings)
-        * [Breakdown of New CPU Overhead (7.68 s)](#breakdown-of-new-cpu-overhead-768-s)
+        * [Breakdown of Parallel CPU Overhead (7.68 s)](#breakdown-of-new-cpu-overhead-768-s)
 7.  [Citation](#citation)
 8.  [Data](#data)
 
@@ -107,7 +107,7 @@ By consolidating all 30 (6 lengths x 5 initializations) design threads onto a si
 | **Non-Prediction CPU Overhead** | **230.40** s | **7.68** s | **222.72** s |
 | **Total Step Time** | $\approx$ 230.40 s (CPU time) + 55.7 s (GPU time) | **63.38** s | (Faster wall-clock time + massive resource savings) |
 
-#### Breakdown of New CPU Overhead (7.68 s):
+#### Breakdown of Parallel CPU Overhead (7.68 s):
 | Step | Time (s) |
 | :--- | :--- |
 | Saving | 2.86 |
