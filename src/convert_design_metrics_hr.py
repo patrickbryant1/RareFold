@@ -31,10 +31,11 @@ seqs = np.array([x for x in raw_metrics.sequence.apply(literal_eval)])
 int_seqs = np.array([x for x in raw_metrics.int_seq.apply(literal_eval)])
 
 #Assign new df
-compiled_df = {'iter':[], 'replicate':[], 'if_dist_binder':[], 'plddt':[], 'inter_clash_frac':[], 'intra_clash_frac':[], 'loss':[], 'sequence':[], 'int_seq':[]}
+compiled_df = {'iter':[], 'replicate':[], 'length':[], 'if_dist_binder':[], 'plddt':[], 'inter_clash_frac':[], 'intra_clash_frac':[], 'loss':[], 'sequence':[], 'int_seq':[]}
 for i in range(if_dist_binder.shape[1]):
     compiled_df['iter'].extend([*raw_metrics.iteration.values])
     compiled_df['replicate'].extend([i]*if_dist_binder.shape[0])
+    compiled_df['length'].extend([len(seqs[0,i])]*if_dist_binder.shape[0])
     compiled_df['if_dist_binder'].extend([*if_dist_binder[:,i]])
     compiled_df['plddt'].extend([*plddts[:,i]])
     compiled_df['inter_clash_frac'].extend([*inter_clash_frac[:,i]])

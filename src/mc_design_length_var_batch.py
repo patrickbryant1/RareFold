@@ -751,7 +751,7 @@ def design_binder(config,
         score_df.to_csv(outdir+'metrics.csv', index=None)
 
         #Check GPU utilisation
-        check_gpu_memory_and_utilization(batch_size)
+        #check_gpu_memory_and_utilization(batch_size)
 
     #Get restype atom mappings - will be used to update the peptide feats each iteration
     #These are index-based, following the same order as in resiue_constants (used for the int_seq)
