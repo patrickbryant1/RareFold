@@ -68,29 +68,29 @@ The target structure is shown in green, with canonical peptide residues in blue 
 
 For the original version of EvoBind with regular amino acids, see: https://github.com/patrickbryant1/EvoBind
 
-Run the test case
-- This runs lengths 10-15 using 5 initialisations per length (on a single GPU!)
-(with 40 GB RAM this fits, if you have less, reduce the number of lengths/initialisations)
+### Run the test case
+
 ```
 conda activate rarefold
 bash design_eff.sh
 ```
+- This runs lengths 10-15 using 5 initialisations per length (on a single GPU!).
+Compare this with using 6 lengths x 5 = 30 GPUs.
+(with 40 GB RAM this fits, if you have less, reduce the number of lengths/initialisations)
 
 The design_eff.sh script also calls many CPU instances to handle data processing, mutation and feature updates efficiently and simultaneously. This reduces GPU off-time from minutes to seconds for each iteration, resulting in many hours saved.
 - For your own design, take your time to optimise the GPU utilisation before starting the design. Try to set different number of lengths and initalisations and check the GPU utilisation (until you run out of RAM).
 
-### Step-by-Step Time Savings
+By consolidating all 30 (6 lengths x 5 initializations) design threads onto a single device, we not only slash the GPU requirement but also eliminate a substantial amount of redundant CPU overhead **per** design step.
 
-By consolidating 25 design threads (the example actually has 30) onto a single device, we not only slash the GPU requirement but also eliminate a substantial amount of redundant CPU overhead **per** design step.
-
-| Design Step Component | Old Time (25x Multiplier) | New Time (Consolidated) | Time Saved (per step) |
+#### Step-by-Step Time Savings
+| Design Step Component | Old Time (30x Multiplier) | New Time (Consolidated) | Time Saved (per step) |
 | :--- | :--- | :--- | :--- |
-| **Prediction (GPU)** | 55.7 s (per process, on 25 separate GPUs) | 55.7 s (on 1 consolidated GPU) | **25&times; Hardware Reduction** |
-| **Non-Prediction CPU Overhead** | **192.00** s | **7.68** s | **184.32** s |
-| **Total Step Time** | $\approx$ 192.00 s (CPU time) + 55.7 s (GPU time) | **63.38** s | (Faster wall-clock time + massive resource savings) |
+| **Prediction (GPU)** | 55.7 s (per process, on 30 separate GPUs) | 55.7 s (on 1 consolidated GPU) | **30&times; Hardware Reduction** |
+| **Non-Prediction CPU Overhead** | **230.40** s | **7.68** s | **222.72** s |
+| **Total Step Time** | $\approx$ 230.40 s (CPU time) + 55.7 s (GPU time) | **63.38** s | (Faster wall-clock time + massive resource savings) |
 
 #### Breakdown of New CPU Overhead (7.68 s):
-
 | Step | Time (s) |
 | :--- | :--- |
 | Saving | 2.86 |
