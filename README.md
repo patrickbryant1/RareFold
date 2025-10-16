@@ -109,11 +109,11 @@ By consolidating all 30 (6 lengths x 5 initializations) design threads onto a si
 #### Breakdown of New CPU Overhead (20.02 s)
 | Step | Time (s) |
 | :--- | :--- |
-| Saving | 13.40 |
 | Mutating sequences | 3.16 |
 | Loss calcs | 3.41 |
 | Making new feats | 0.04 |
 | Adding metrics | 0.01 |
+| Saving structures | 13.40 |
 | **Total** | **20.02** |
 
 # Citation
