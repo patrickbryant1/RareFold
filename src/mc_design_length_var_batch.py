@@ -3,6 +3,8 @@ os.environ["GLOG_minloglevel"] = "3"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 # Optionally silence other absl startup logs (rarely needed)
 os.environ["ABSL_LOGGING_MIN_LOG_LEVEL"] = "3"
+# Silence the specific MLIR V1 optimization pass warning
+os.environ['TF_ENABLE_MLIR_V1_GRAPH_OPTIMIZATION'] = '1'
 
 import warnings
 warnings.filterwarnings(
