@@ -53,12 +53,10 @@ from rarefold.model import modules
 #This prevents this
 os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 
-
 parser = argparse.ArgumentParser(description = """Design a binder using trained weights.
                                                   This particular script allows for length variation within the same batch (GPU).
                                                   Function calls are also threaded across CPU cores for less GPU off time.
                                                   """)
-
 
 parser.add_argument('--predict_id', nargs=1, type= str, default=sys.stdin, help = 'Id to predict.')
 parser.add_argument('--MSA_feats', nargs=1, type= str, default=sys.stdin, help = 'Id to predict.')
@@ -74,9 +72,6 @@ parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 ##############FUNCTIONS##############
-
-
-
 def check_gpu_memory_and_utilization(batch_size):
     """
     Checks and prints the memory statistics for the first available GPU in JAX.
@@ -169,8 +164,6 @@ def process_features(raw_features, config, random_seed):
     return features.np_example_to_features(np_example=raw_features,
                                             config=config,
                                             random_seed=random_seed)
-
-
 
 def process_input_feats(new_feature_dict, config):
     """

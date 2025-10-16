@@ -76,7 +76,8 @@ conda activate rarefold
 bash design_eff.sh
 ```
 
-The design_eff.sh script also calls many CPU instances to handle data processing, mutation and feature updates efficiently and simultaneously.
+The design_eff.sh script also calls many CPU instances to handle data processing, mutation and feature updates efficiently and simultaneously. This reduces GPU off-time from minutes to seconds for each iteration, resulting in many hours saved.
+- For your own design, take your time to optimise the GPU utilisation before starting the design. Try to set different number of lengths and initalisations and check the GPU utilisation (until you run out of RAM).
 
 # Citation
 If you use RareFold in your research, please cite
