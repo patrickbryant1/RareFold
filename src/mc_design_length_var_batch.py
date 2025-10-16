@@ -5,6 +5,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ["ABSL_LOGGING_MIN_LOG_LEVEL"] = "3"
 # Silence the specific MLIR V1 optimization pass warning
 os.environ['TF_ENABLE_MLIR_V1_GRAPH_OPTIMIZATION'] = '1'
+# OPTIONAL: You may also want to silence general TensorFlow warnings, which can be verbose
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # '1' to filter out INFO, '2' to filter out WARNING, '3' to filter out ERROR
+
 
 import warnings
 warnings.filterwarnings(
