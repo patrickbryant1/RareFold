@@ -69,9 +69,11 @@ The target structure is shown in green, with canonical peptide residues in blue 
 For the original version of EvoBind with regular amino acids, see: https://github.com/patrickbryant1/EvoBind
 
 Run the test case
+- This runs lengths 10-15 using 5 initialisations per length (on a single GPU!)
+(with 40 GB RAM this fits, if you have less, reduce the number of lengths/initialisations)
 ```
 conda activate rarefold
-bash design.sh
+bash design_eff.sh
 ```
 
 

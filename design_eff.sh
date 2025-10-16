@@ -17,7 +17,7 @@ fi
 
 #############PARAMS FOR DESIGN#############
 MAX_RECYCLES=8 #max_recycles (default=3)
-BINDER_LENGTHS="10,11,12,13,14"
+BINDER_LENGTHS="10,11,12,13,14,15"
 NITER=1000
 RESAMPLE_FREQ=100 #How often to resample the MSA
 BATCH_SIZE=5 #The batch size determines how many design threads are run simultaneously
