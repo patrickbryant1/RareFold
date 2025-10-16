@@ -588,6 +588,7 @@ def design_binder(config,
     target_length = len(MSA_feats['aatype'])
     print("--- Targeting a protein of length "+str(target_length)+" ---")
     print('--- Using a batch size of', batch_size, 'and lengths',binder_lengths, '---')
+    print('--- Cyclic offset', config.model.embeddings_and_evoformer.cyclic_offset, '---'
 
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
