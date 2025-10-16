@@ -17,7 +17,7 @@ fi
 
 #############PARAMS FOR DESIGN#############
 MAX_RECYCLES=8 #max_recycles (default=3)
-BINDER_LENGTHS="10,11,12"
+BINDER_LENGTHS="10,11,12,13,14"
 NITER=1000
 RESAMPLE_FREQ=100 #How often to resample the MSA
 BATCH_SIZE=5 #The batch size determines how many design threads are run simultaneously
@@ -33,7 +33,7 @@ RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threelet
 # 'FTR', 'LLP', 'CAF', 'CMH', 'MHO'
 
 CYCLIC=True #Set to False if you want to design linear binders
-MAX_WORKERS=18
+MAX_WORKERS=25
 OUTDIR=$DATADIR/
 
 #######Step2: Make MSA features#######
