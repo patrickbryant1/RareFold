@@ -13,6 +13,23 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
 
 <img src="./data/RareFold.svg"/>
 
+
+# Table of Contents
+1.  [RareFold](#rarefold)
+2.  [LICENSE](#license)
+3.  [Colab](#colab)
+4.  [Installation](#installation)
+5.  [Predict using RareFold](#predict-using-rarefold)
+6.  [Design using EvoBindRare](#design-using-evobindrare)
+    * [Design linear or cyclic peptide binders incorporating noncanonical amino acids](#design-linear-or-cyclic-peptide-binders-incorporating-noncanonical-amino-acids)
+    * [Run the test case](#run-the-test-case)
+        * [Step-by-Step Time Savings](#step-by-step-time-savings)
+        * [Breakdown of New CPU Overhead (7.68 s)](#breakdown-of-new-cpu-overhead-768-s)
+7.  [Citation](#citation)
+8.  [Data](#data)
+
+---
+
 # LICENSE
 RareFold is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).  \
 The RareFold parameters for prediction are made available under the terms of the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/legalcode). \
