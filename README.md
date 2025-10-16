@@ -76,6 +76,7 @@ conda activate rarefold
 bash design_eff.sh
 ```
 
+The design_eff.sh script also calls many CPU instances to handle data processing, mutation and feature updates efficiently and simultaneously.
 
 # Citation
 If you use RareFold in your research, please cite
