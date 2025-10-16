@@ -24,7 +24,6 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
     * [Design linear or cyclic peptide binders incorporating noncanonical amino acids](#design-linear-or-cyclic-peptide-binders-incorporating-noncanonical-amino-acids)
     * [Run the test case](#run-the-test-case)
         * [Step-by-Step Time Savings](#step-by-step-time-savings)
-        * [Breakdown of Parallel CPU Overhead (7.68 s)](#breakdown-of-new-cpu-overhead-768-s)
 7.  [Citation](#citation)
 8.  [Data](#data)
 
@@ -103,18 +102,19 @@ By consolidating all 30 (6 lengths x 5 initializations) design threads onto a si
 #### Step-by-Step Time Savings
 | Design Step Component | Old Time (30x Multiplier) | New Time (Consolidated) | Time Saved (per step) |
 | :--- | :--- | :--- | :--- |
-| **Prediction (GPU)** | 55.7 s (per process, on 30 separate GPUs) | 55.7 s (on 1 consolidated GPU) | **30&times; Hardware Reduction** |
-| **Non-Prediction CPU Overhead** | **230.40** s | **7.68** s | **222.72** s |
-| **Total Step Time** | $\approx$ 230.40 s (CPU time) + 55.7 s (GPU time) | **63.38** s | (Faster wall-clock time + massive resource savings) |
+| **Prediction (GPU)** | 91.29 s (per process, on 30 separate GPUs) | 91.29 s (on 1 consolidated GPU) | **30&times; Hardware Reduction** |
+| **Non-Prediction CPU Overhead** | **600.60** s | **20.02** s | **580.58** s |
+| **Total Step Time** | $\approx$ 600.60 s (CPU time) + 91.29 s (GPU time) | **111.31** s | (Faster wall-clock time + massive resource savings) |
 
-#### Breakdown of Parallel CPU Overhead (7.68 s):
+#### Breakdown of New CPU Overhead (20.02 s)
 | Step | Time (s) |
 | :--- | :--- |
-| Saving | 2.86 |
-| Mutating sequences | 2.47 |
-| Loss calcs | 2.34 |
+| Saving | 13.40 |
+| Mutating sequences | 3.16 |
+| Loss calcs | 3.41 |
+| Making new feats | 0.04 |
 | Adding metrics | 0.01 |
-| **Total** | **7.68** |
+| **Total** | **20.02** |
 
 # Citation
 If you use RareFold in your research, please cite
