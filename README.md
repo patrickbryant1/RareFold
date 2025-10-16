@@ -79,6 +79,26 @@ bash design_eff.sh
 The design_eff.sh script also calls many CPU instances to handle data processing, mutation and feature updates efficiently and simultaneously. This reduces GPU off-time from minutes to seconds for each iteration, resulting in many hours saved.
 - For your own design, take your time to optimise the GPU utilisation before starting the design. Try to set different number of lengths and initalisations and check the GPU utilisation (until you run out of RAM).
 
+### Step-by-Step Time Savings
+
+By consolidating 25 design threads (the example actually has 30) onto a single device, we not only slash the GPU requirement but also eliminate a substantial amount of redundant CPU overhead **per** design step.
+
+| Design Step Component | Old Time (25x Multiplier) | New Time (Consolidated) | Time Saved (per step) |
+| :--- | :--- | :--- | :--- |
+| **Prediction (GPU)** | 55.7 s (per process, on 25 separate GPUs) | 55.7 s (on 1 consolidated GPU) | **25&times; Hardware Reduction** |
+| **Non-Prediction CPU Overhead** | **192.00** s | **7.68** s | **184.32** s |
+| **Total Step Time** | $\approx$ 192.00 s (CPU time) + 55.7 s (GPU time) | **63.38** s | (Faster wall-clock time + massive resource savings) |
+
+#### Breakdown of New CPU Overhead (7.68 s):
+
+| Step | Time (s) |
+| :--- | :--- |
+| Saving | 2.86 |
+| Mutating sequences | 2.47 |
+| Loss calcs | 2.34 |
+| Adding metrics | 0.01 |
+| **Total** | **7.68** |
+
 # Citation
 If you use RareFold in your research, please cite
 
