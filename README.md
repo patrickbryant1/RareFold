@@ -70,8 +70,7 @@ bash predict.sh
 # Design using EvoBindRare
 ## Design linear or cyclic peptide binders incorporating noncanonical amino acids
 EvoBindRare designs novel peptide binders based only on a protein target sequence.
-It is not necessary to specify any target residues within the protein sequence or the
-length of the binder (although this is possible).
+It is not necessary to specify any target residues within the protein sequence - let RareFold choose!
 EvoBindRare is the only protocol with experimentally verified cyclic-noncanonical amino acid design capacity.
 
 <p align="center">
