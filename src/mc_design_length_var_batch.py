@@ -841,7 +841,7 @@ def design_binder(config,
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
-                    constant_args=(batch, numpy_pred_result, str(niter), outdir),
+                    constant_args=(batch, numpy_pred_result, 'iter_'+str(niter), outdir),
                     max_workers=max_workers)
 
         print('Saving took', np.round(time.time()-t0,2) ,'s')
