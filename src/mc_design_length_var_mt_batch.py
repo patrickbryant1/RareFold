@@ -183,7 +183,7 @@ def process_input_feats(new_feature_dict, config):
     return batch_ex
 
 
-def init_features(onehot_binder_seq, feature_dict, config):
+def init_features(onehot_binder_seq, feature_dicts, config):
     """Update the features to include the binder sequence
 
     #From MSA feats
@@ -198,49 +198,52 @@ def init_features(onehot_binder_seq, feature_dict, config):
     'num_alignments'
     """
 
-    #Save
-    new_feature_dict = {}
+    new_feature_dicts = []
+    for feature_dict in feature_dicts:
+        #Save
+        new_feature_dict = {}
 
-    #Binder length
-    binder_length = len(onehot_binder_seq)
-    #Add peptide feats to feature dict
-    #aatype
-    new_feature_dict['int_seq'] = np.concatenate((np.argmax(feature_dict['aatype'],axis=1), np.array(onehot_binder_seq)),axis=0)
-    #between_segment_residues
-    new_feature_dict['between_segment_residues'] = np.concatenate((feature_dict['between_segment_residues'],np.zeros((binder_length), dtype=np.int32)),axis=0)
-    #residue_index
-    new_feature_dict['residue_index'] = np.concatenate((feature_dict['residue_index'],np.array(range(binder_length), dtype=np.int32)+feature_dict['residue_index'][-1]+201), axis=0)
-    #seq_length
-    new_feature_dict['seq_length'] = np.array([new_feature_dict['int_seq'].shape[0]] * new_feature_dict['int_seq'].shape[0], dtype=np.int32)
+        #Binder length
+        binder_length = len(onehot_binder_seq)
+        #Add peptide feats to feature dict
+        #aatype
+        new_feature_dict['int_seq'] = np.concatenate((np.argmax(feature_dict['aatype'],axis=1), np.array(onehot_binder_seq)),axis=0)
+        #between_segment_residues
+        new_feature_dict['between_segment_residues'] = np.concatenate((feature_dict['between_segment_residues'],np.zeros((binder_length), dtype=np.int32)),axis=0)
+        #residue_index
+        new_feature_dict['residue_index'] = np.concatenate((feature_dict['residue_index'],np.array(range(binder_length), dtype=np.int32)+feature_dict['residue_index'][-1]+201), axis=0)
+        #seq_length
+        new_feature_dict['seq_length'] = np.array([new_feature_dict['int_seq'].shape[0]] * new_feature_dict['int_seq'].shape[0], dtype=np.int32)
 
-    #Merge MSA features
-    #deletion_matrix_int
-    new_feature_dict['deletion_matrix_int']=np.concatenate((feature_dict['deletion_matrix_int'],
-                                            np.zeros((feature_dict['deletion_matrix_int'].shape[0],binder_length))), axis=1)
-    #msa
-    peptide_msa = np.zeros((feature_dict['msa'].shape[0],binder_length),dtype=int)
-    peptide_msa[:,:] = 21
-    #Assign first seq - need to have X instead of mod AAs
-    """
-    HHBLITS_AA_TO_ID = {'A': 0,'B': 2,'C': 1,'D': 2,'E': 3,'F': 4,'G': 5,'H': 6,'I': 7,'J': 20,'K': 8,'L': 9,'M': 10,'N': 11,
-                        'O': 20,'P': 12,'Q': 13,'R': 14,'S': 15,'T': 16,'U': 1,'V': 17,'W': 18,'X': 20,'Y': 19,'Z': 3,'-': 21,}
-    """
-    x = copy.deepcopy(np.array(onehot_binder_seq))
-    x[x>19]=20
-    peptide_msa[0,:] = x
+        #Merge MSA features
+        #deletion_matrix_int
+        new_feature_dict['deletion_matrix_int']=np.concatenate((feature_dict['deletion_matrix_int'],
+                                                np.zeros((feature_dict['deletion_matrix_int'].shape[0],binder_length))), axis=1)
+        #msa
+        peptide_msa = np.zeros((feature_dict['msa'].shape[0],binder_length),dtype=int)
+        peptide_msa[:,:] = 21
+        #Assign first seq - need to have X instead of mod AAs
+        """
+        HHBLITS_AA_TO_ID = {'A': 0,'B': 2,'C': 1,'D': 2,'E': 3,'F': 4,'G': 5,'H': 6,'I': 7,'J': 20,'K': 8,'L': 9,'M': 10,'N': 11,
+                            'O': 20,'P': 12,'Q': 13,'R': 14,'S': 15,'T': 16,'U': 1,'V': 17,'W': 18,'X': 20,'Y': 19,'Z': 3,'-': 21,}
+        """
+        x = copy.deepcopy(np.array(onehot_binder_seq))
+        x[x>19]=20
+        peptide_msa[0,:] = x
 
-    new_feature_dict['msa']=np.concatenate((feature_dict['msa'], peptide_msa), axis=1)
+        new_feature_dict['msa']=np.concatenate((feature_dict['msa'], peptide_msa), axis=1)
 
-    #num_alignments
-    new_feature_dict['num_alignments']=np.concatenate((feature_dict['num_alignments'], feature_dict['num_alignments'][:len(onehot_binder_seq)]), axis=0)
+        #num_alignments
+        new_feature_dict['num_alignments']=np.concatenate((feature_dict['num_alignments'], feature_dict['num_alignments'][:len(onehot_binder_seq)]), axis=0)
 
-    #Process
-    if config.model.embeddings_and_evoformer.cyclic_offset==True:
-        new_feature_dict['binder_cyclic_offset_array'] = copy.deepcopy(feature_dict['binder_cyclic_offset_array_'+str(binder_length)])
+        #Process
+        if config.model.embeddings_and_evoformer.cyclic_offset==True:
+            new_feature_dict['binder_cyclic_offset_array'] = copy.deepcopy(feature_dict['binder_cyclic_offset_array_'+str(binder_length)])
 
-    new_feature_dict = process_input_feats(new_feature_dict, config)
+        new_feature_dict = process_input_feats(new_feature_dict, config)
+        new_feature_dicts.append(new_feature_dict)
 
-    return new_feature_dict
+    return new_feature_dicts
 
 def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config):
     """Make the batch uniform
@@ -616,7 +619,8 @@ def design_binder(config,
                         'loss':[],
                         'sequence':[],
                         'int_seq':[],
-                        'iter_time':[]
+                        'iter_time':[],
+                        'target':[],
                         }
 
     #check if previous run exists
@@ -655,6 +659,7 @@ def design_binder(config,
         print('--- Initialising sequences ---')
         #Initialize weights - these are the amino acid probabilities
         #Also returns the peptide_sequence corresponding to the weights
+        #This will loop and create init seqs batch_size times for each binder length
         t0 = time.time()
         init_binder_seqs = parallel_map(func=initialize_weights,
                                 iter_args=binder_lengths,
@@ -667,11 +672,14 @@ def design_binder(config,
             item = init_binder_seqs[i]
             binder_seqs.extend(item[0]) #Add the batch_size list of binder seqs of length binder_length[i]
             int_binder_seqs.extend(item[1])
-            lengths_in_batch.extend([binder_lengths[i]]*batch_size)
+            lengths_in_batch.extend([binder_lengths[i]]*batch_size*num_targets)
         print('Init seqs took',np.round(time.time()-t0,2),'s')
+
+        pdb.set_trace()
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
+        #This will return (target 1, .., target_n) x len(int_binder_seqs)
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
