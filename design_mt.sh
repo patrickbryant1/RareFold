@@ -13,7 +13,7 @@ PARAMS=$BASE/data/params/finetuned_params25000.npy
 RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threeletter code for the NCAA you want to use for design
 CYCLIC=True #Set to False if you want to design linear binders
 MAX_WORKERS=30 #Number of CPU instances to use for the threading
-OUTDIR=$DATADIR/
+OUTDIR=./data/design_test_case/
 
 #######Step2: Make MSA features#######
 MSA_FEATS1=$BASE/data/design_test_case/1ssc/msa_features.pkl

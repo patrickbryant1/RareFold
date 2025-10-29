@@ -554,7 +554,7 @@ def design_binder(config,
     #Get target length
     num_targets = len(MSA_feats)
     seq_lens = [x['aatype'].shape[0] for x in MSA_feats]
-    print('Targeting', num_targets, 'targets with lengths', target_lengths, 'simultaneously.')
+    print('Targeting', num_targets, 'targets with lengths', seq_lens, 'simultaneously.')
     print('Replicating each target', batch_size, 'times.')
     print('--- Cyclic offset', config.model.embeddings_and_evoformer.cyclic_offset, '---')
     #This will replicate the feats in the same order as in the original list
