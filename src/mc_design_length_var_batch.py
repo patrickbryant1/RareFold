@@ -639,6 +639,7 @@ def design_binder(config,
                         'loss':[],
                         'sequence':[],
                         'int_seq':[],
+                        'iter_time':[]
                         }
 
     #check if previous run exists
@@ -759,6 +760,7 @@ def design_binder(config,
     #Iterate - mutate - score - repeat
     for niter in range(len(sequence_scores['iteration']), num_iterations+1):
         #Can't prefetch - dependent on the previous iter
+        iter_time_0 = time.time()
         #Mutate sequence
         t_0 = time.time()
         mut_seqs = parallel_map(func=mutate_sequence,
@@ -853,7 +855,8 @@ def design_binder(config,
             #Reset starting point to min
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
 
-
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
 
 def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     """Save prediction
@@ -891,8 +894,6 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     unrelaxed_pdb_path = os.path.join(binder_outdir, pred_id+'_'+str(i)+'.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
         f.write(unrelaxed_pdb)
-
-
 
 ##################MAIN#######################
 

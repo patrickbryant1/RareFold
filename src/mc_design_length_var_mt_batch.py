@@ -558,11 +558,11 @@ def design_binder(config,
     print('Replicating each target', batch_size, 'times.')
     print('--- Cyclic offset', config.model.embeddings_and_evoformer.cyclic_offset, '---')
     #This will replicate the feats in the same order as in the original list
-    batch_MSA_feats = MSA_feats*batch_size*len(binder_lengths)
-    target_lens = seq_lens*batch_size*len(binder_lengths)
+    target_lens = seq_lens*batch_size*len(binder_lengths) #Targets replicated batch size times for each length - in that order
     target_inds = [x for x in range(num_targets)]*batch_size*len(binder_lengths) #Keep track of what target
-    pdb.set_trace()
+    unit_size = num_targets*batch_size #This is for each binder length
 
+    #Add cyclic offsets for each binder length to all MSA feats - if cyclic design
     if config.model.embeddings_and_evoformer.cyclic_offset==True:
         for binder_length in binder_lengths:
             cyclic_offset_array = np.zeros((binder_length, binder_length))
@@ -572,9 +572,10 @@ def design_binder(config,
             for i in range(len(cyclic_offset_array)):
                 cyclic_offset_array[i]=np.roll(cyc_row,i)
             #Store the cyclic offset array for each binder length
-            for MSA_feats in batch_MSA_feats:
-                MSA_feats['binder_cyclic_offset_array_'+str(binder_length)]=cyclic_offset_array
+            for x in MSA_feats:
+                x['binder_cyclic_offset_array_'+str(binder_length)]=cyclic_offset_array
 
+    pdb.set_trace()
     #Define the forward function
     def _forward_fn(batch):
         '''Define the forward function - has to be a function for JAX
@@ -615,6 +616,7 @@ def design_binder(config,
                         'loss':[],
                         'sequence':[],
                         'int_seq':[],
+                        'iter_time':[]
                         }
 
     #check if previous run exists
@@ -735,6 +737,7 @@ def design_binder(config,
     #Iterate - mutate - score - repeat
     for niter in range(len(sequence_scores['iteration']), num_iterations+1):
         #Can't prefetch - dependent on the previous iter
+        iter_time_0 = time.time()
         #Mutate sequence
         t_0 = time.time()
         mut_seqs = parallel_map(func=mutate_sequence,
@@ -829,7 +832,10 @@ def design_binder(config,
             #Reset starting point to min
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
 
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
 
+        pdb.set_trace()
 
 def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     """Save prediction
