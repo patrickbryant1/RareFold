@@ -10,3 +10,7 @@ data/design_test_case/1ssc/init*.pdb
 data/design_test_case/1ssc/metrics.csv
 .DS_Store
 data/.DS_Store
+data/uniclust30
+data/uniclust30_2018_08
+data/uniclust30_2018_08_hhsuite.tar.gz
+hh-suite
