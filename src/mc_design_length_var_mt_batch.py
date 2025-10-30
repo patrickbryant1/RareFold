@@ -731,7 +731,6 @@ def design_binder(config,
                                 max_workers=max_workers)
         print('Loss calcs took',np.round(time.time() - t_0, 2),'s')
 
-        pdb.set_trace()
         #Now the loss has to be averaged across the targets
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
@@ -743,7 +742,11 @@ def design_binder(config,
         sequence_scores['plddt'].append([*plddt])
         sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
         sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
+
+        pdb.set_trace()
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
+        #The loss is averaged across all targets
+        averaged_loss = loss_array.reshape(-1, num_targets).mean(axis=1)
         sequence_scores['loss'].append([*loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
@@ -766,14 +769,14 @@ def design_binder(config,
         #Mutate sequence
         t_0 = time.time()
         mut_seqs = parallel_map(func=mutate_sequence,
-                                iter_args= np.arange(len(lengths_in_batch)),
+                                iter_args= np.arange(len(int_binder_seqs)),
                                 constant_args=(int_binder_seqs, sequence_scores['int_seq'], all_AA_triplets, selected_AA_index),
                                 max_workers=max_workers)
 
         int_binder_seqs = [x[0] for x in mut_seqs]
         binder_seqs = [x[1] for x in mut_seqs]
         print('Mutating sequences took', np.round(time.time() - t_0,2),'s')
-
+        pdb.set_trace()
         #Resample MSA or only update feats with mut_seqs
         if niter%resample_every_n==0:
             #Reload batch to resample MSA
