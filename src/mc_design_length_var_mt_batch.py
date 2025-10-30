@@ -897,7 +897,7 @@ def save_structure(i, batch, numpy_pred_result, target_inds, predict_id, step_nu
     binder_length = int(batch['binder_length'][i][0][0])
     binder_outdir = outdir+'/'+str(binder_length)+'/'+pred_id+'/'
     if not os.path.exists(binder_outdir):
-        os.mkdirs(binder_outdir) #Makes parent dirs also
+        os.makedirs(binder_outdir) #Makes parent dirs also
     unrelaxed_pdb_path = os.path.join(binder_outdir, step_num+'_'+str(i)+'.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
         f.write(unrelaxed_pdb)
