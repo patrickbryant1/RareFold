@@ -433,7 +433,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
 
     #Here, we need to replicate the binder seqs to match the batch shape
     # Use nested list comprehension to iterate over the main list and then repeat each item
-    replicated_seqs = [sublist for sublist in int_binder_seqs for _ in range(num_targets) ]
+    int_binder_seqs = [sublist for sublist in int_binder_seqs for _ in range(num_targets) ]
 
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
@@ -454,6 +454,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
     for i in range(len(lengths_in_batch)):
         bl = lengths_in_batch[i]
         tl = target_lens[i]
+        pdb.set_trace()
         #Assign to target feats
         batch['target_feat'][i,:,tl:tl+bl,:] = onhot_binder_seqs[i][:bl]
         #aatype
@@ -803,7 +804,6 @@ def design_binder(config,
         else:
             print("--- Updating features ---")
             #Update feats with binder seq
-            pdb.set_trace()
             t_0 = time.time()
             batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_lens, num_targets, num_AAs, restype_atom_mappings)
             print('Making new feats took', np.round(time.time() - t_0,2),'s')
