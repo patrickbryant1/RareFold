@@ -454,7 +454,6 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
     for i in range(len(lengths_in_batch)):
         bl = lengths_in_batch[i]
         tl = target_lens[i]
-        pdb.set_trace()
         #Assign to target feats
         batch['target_feat'][i,:,tl:tl+bl,:] = onhot_binder_seqs[i][:bl]
         #aatype
@@ -464,7 +463,6 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
         batch['residx_atom37_to_atom14'][i,:,tl:tl+bl,:] = residx_atom37_to_atom14[i][:bl]
         batch['atom37_atom_exists'][i,:,tl:tl+bl,:] = residx_atom37_mask[i][:bl]
 
-    pdb.set_trace()
     return batch
 
 def get_loss(bi, prediction_result, binder_lengths, target_lens):
