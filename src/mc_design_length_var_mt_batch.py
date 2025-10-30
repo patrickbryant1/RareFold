@@ -821,7 +821,7 @@ def design_binder(config,
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(numpy_pred_result, lengths_in_batch, target_length),
+                                constant_args=(numpy_pred_result, lengths_in_batch, target_lens),
                                 max_workers=max_workers)
         print('Loss calcs took', np.round(time.time() - t_0, 2),'s')
 
@@ -838,6 +838,8 @@ def design_binder(config,
         sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
         sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
+        #The loss is averaged across all targets - we can get back the individual values from the other scores
+        loss = loss.reshape(-1, num_targets).mean(axis=1)
         sequence_scores['loss'].append([*loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
@@ -857,7 +859,7 @@ def design_binder(config,
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
-                    constant_args=(batch, numpy_pred_result, 'iter_'+str(niter), outdir),
+                    constant_args=(batch, numpy_pred_result, predict_id, 'iter_'+str(niter), outdir),
                     max_workers=max_workers)
 
         print('Saving took', np.round(time.time()-t0,2) ,'s')
