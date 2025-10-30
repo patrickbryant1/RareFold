@@ -183,7 +183,7 @@ def process_input_feats(new_feature_dict, config):
     return batch_ex
 
 
-def init_features(onehot_binder_seq, feature_dicts, config):
+def init_features(int_binder_seq, feature_dicts, config):
     """Update the features to include the binder sequence
 
     #From MSA feats
@@ -204,10 +204,10 @@ def init_features(onehot_binder_seq, feature_dicts, config):
         new_feature_dict = {}
 
         #Binder length
-        binder_length = len(onehot_binder_seq)
+        binder_length = len(int_binder_seq)
         #Add peptide feats to feature dict
         #aatype
-        new_feature_dict['int_seq'] = np.concatenate((np.argmax(feature_dict['aatype'],axis=1), np.array(onehot_binder_seq)),axis=0)
+        new_feature_dict['int_seq'] = np.concatenate((np.argmax(feature_dict['aatype'],axis=1), np.array(int_binder_seq)),axis=0)
         #between_segment_residues
         new_feature_dict['between_segment_residues'] = np.concatenate((feature_dict['between_segment_residues'],np.zeros((binder_length), dtype=np.int32)),axis=0)
         #residue_index
@@ -227,14 +227,14 @@ def init_features(onehot_binder_seq, feature_dicts, config):
         HHBLITS_AA_TO_ID = {'A': 0,'B': 2,'C': 1,'D': 2,'E': 3,'F': 4,'G': 5,'H': 6,'I': 7,'J': 20,'K': 8,'L': 9,'M': 10,'N': 11,
                             'O': 20,'P': 12,'Q': 13,'R': 14,'S': 15,'T': 16,'U': 1,'V': 17,'W': 18,'X': 20,'Y': 19,'Z': 3,'-': 21,}
         """
-        x = copy.deepcopy(np.array(onehot_binder_seq))
+        x = copy.deepcopy(np.array(int_binder_seq))
         x[x>19]=20
         peptide_msa[0,:] = x
 
         new_feature_dict['msa']=np.concatenate((feature_dict['msa'], peptide_msa), axis=1)
 
         #num_alignments
-        new_feature_dict['num_alignments']=np.concatenate((feature_dict['num_alignments'], feature_dict['num_alignments'][:len(onehot_binder_seq)]), axis=0)
+        new_feature_dict['num_alignments']=np.concatenate((feature_dict['num_alignments'], feature_dict['num_alignments'][:len(int_binder_seq)]), axis=0)
 
         #Process
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
@@ -578,7 +578,6 @@ def design_binder(config,
             for x in MSA_feats:
                 x['binder_cyclic_offset_array_'+str(binder_length)]=cyclic_offset_array
 
-    pdb.set_trace()
     #Define the forward function
     def _forward_fn(batch):
         '''Define the forward function - has to be a function for JAX
@@ -675,17 +674,30 @@ def design_binder(config,
             lengths_in_batch.extend([binder_lengths[i]]*batch_size*num_targets)
         print('Init seqs took',np.round(time.time()-t0,2),'s')
 
-        pdb.set_trace()
+        """
+        Some context of what is happening here:
+        lengths_in_batch
+        [10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15]
+        target_inds
+        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+        batch_size=2, 2 targets --> 4 per length, but 2 unique seqs being designed (batch_size)
+        len(binder_seqs) = 12, len(target_inds) = 24
+        This means that each sequence should be distributed to n=2 targets with the same step size
+        [len(x) for x in int_binder_seqs] --> [10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15]
+        """
+
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
-        #This will return (target 1, .., target_n) x len(int_binder_seqs)
+        #This will return [target 1, .., target_n] x len(int_binder_seqs)
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
 
         print('Init feats took',np.round(time.time()-t0,2),'s')
+
+        pdb.set_trace()
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         t0 = time.time()
