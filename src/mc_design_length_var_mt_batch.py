@@ -645,7 +645,7 @@ def design_binder(config,
         for i in range(len(best_inds)):
             seq_i = sequence_scores['int_seq'][best_inds[i]][i]
             int_binder_seqs.append(seq_i)
-            lengths_in_batch.extend([len(seq_i)]*batch_size*num_targets)
+            lengths_in_batch.extend([len(seq_i)]*num_targets) #Only replicate over num_targets, already batched
 
         #Make feature dicts
         print("--- Running init_features in parallel ---")
