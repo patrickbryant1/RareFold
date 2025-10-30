@@ -710,7 +710,6 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took', np.round(time.time()-t0, 2),'s')
 
-        pdb.set_trace()
         #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
         numpy_pred_result = jax_independent_result(prediction_result)
 
@@ -730,6 +729,9 @@ def design_binder(config,
                                 constant_args=(numpy_pred_result, lengths_in_batch, target_length),
                                 max_workers=max_workers)
         print('Loss calcs took',np.round(time.time() - t_0, 2),'s')
+
+        pdb.set_trace()
+        #Now the loss has to be averaged across the targets
         if_dist_binder = np.array([x[0] for x in iter_loss_metrics])
         plddt = np.array([x[1] for x in iter_loss_metrics])
         inter_clash_fracs = np.array([x[2] for x in iter_loss_metrics])
