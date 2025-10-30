@@ -460,7 +460,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
 
     return batch
 
-def get_loss(bi, prediction_result, binder_lengths, target_length):
+def get_loss(bi, prediction_result, binder_lengths, target_lens):
     '''Predict and calculate loss
     '''
 
@@ -491,6 +491,7 @@ def get_loss(bi, prediction_result, binder_lengths, target_length):
 
     #Divide by receptor/peptide
     binder_length = binder_lengths[bi]
+    target_length = target_lens[bi]
     total_length = target_length+binder_length
     u_resnos = np.unique(extracted_resnos)[:total_length]
     peptide_resnos = u_resnos[-binder_length:]
@@ -726,7 +727,7 @@ def design_binder(config,
         t_0 = time.time()
         iter_loss_metrics = parallel_map(func=get_loss,
                                 iter_args=np.arange(len(lengths_in_batch)),
-                                constant_args=(numpy_pred_result, lengths_in_batch, target_length),
+                                constant_args=(numpy_pred_result, lengths_in_batch, target_lens),
                                 max_workers=max_workers)
         print('Loss calcs took',np.round(time.time() - t_0, 2),'s')
 
