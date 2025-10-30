@@ -434,7 +434,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
     #Here, we need to replicate the binder seqs to match the batch shape
     # Use nested list comprehension to iterate over the main list and then repeat each item
     replicated_seqs = [sublist for sublist in int_binder_seqs for _ in range(num_targets) ]
-    pdb.set_trace()
+
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
     padded_seqs = [x+[20]*(max_len-len(x)) for x in int_binder_seqs] #Index 20 is UNK
