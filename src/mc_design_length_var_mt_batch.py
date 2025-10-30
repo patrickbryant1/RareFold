@@ -253,8 +253,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_lens, num_recycles, confi
     tot_lens = [len(x['int_seq']) for x in init_feature_dicts]
     max_tot_len = max(tot_lens)
 
-    pdb.set_trace()
-
     #The batch size here is the number of examples in init_feature_dicts
     batch_size = len(init_feature_dicts)
     ex = init_feature_dicts[0] #To get shapes
@@ -306,7 +304,6 @@ def uniform_batch(init_feature_dicts, pep_lens, target_lens, num_recycles, confi
         batch['total_length'][i,:,:] = tl
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
             batch['cyclic_offset'][i,:,:tl,:tl] = feats_i['cyclic_offset']
-            pdb.set_trace()
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
@@ -636,6 +633,7 @@ def design_binder(config,
                 sequence_scores[col] = [*score_df[col].values]
 
         #Reset starting point to min
+        pdb.set_trace()
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
         int_binder_seqs, lengths_in_batch = [], []
         for i in range(len(best_inds)):
@@ -701,7 +699,6 @@ def design_binder(config,
         init_feature_dicts = [item for sublist in init_feature_dicts for item in sublist]
         print('Init feats took',np.round(time.time()-t0,2),'s')
 
-        pdb.set_trace()
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         t0 = time.time()
@@ -713,6 +710,7 @@ def design_binder(config,
         prediction_result = vmap_apply_fwd(params, rng, batch)
         print('Init pred took', np.round(time.time()-t0, 2),'s')
 
+        pdb.set_trace()
         #Convert prediction result to be independent of jax (move to CPU) - necessary for threading
         numpy_pred_result = jax_independent_result(prediction_result)
 
@@ -720,7 +718,7 @@ def design_binder(config,
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
-                    constant_args=(batch, numpy_pred_result, 'init', outdir),
+                    constant_args=(batch, numpy_pred_result, target_inds, pred_id, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took', np.round(time.time()-t0,2) ,'s')
 
@@ -861,7 +859,7 @@ def design_binder(config,
 
         pdb.set_trace()
 
-def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
+def save_structure(i, batch, numpy_pred_result, target_inds, pred_id, step_num, outdir):
     """Save prediction
 
     save_feats = {'aatype':batch['aatype'][0][0], 'residue_index':batch['residue_index'][0][0]}
@@ -872,6 +870,10 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     save_structure(save_feats, result, step_num, outdir)
 
     """
+
+    #Get target ind
+    ti = target_inds[i]
+    pred_id = pred_id.split('_')[ti]
 
     #Define the plDDT bins
     bin_width = 1.0 / 50
@@ -891,10 +893,10 @@ def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     unrelaxed_pdb = protein.to_pdb(unrelaxed_protein)
     #Save per binder length
     binder_length = int(batch['binder_length'][i][0][0])
-    binder_outdir = outdir+'/'+str(binder_length)+'/'
+    binder_outdir = outdir+'/'+str(binder_length)+'/'+pred_id+'/'
     if not os.path.exists(binder_outdir):
-        os.mkdir(binder_outdir)
-    unrelaxed_pdb_path = os.path.join(binder_outdir, pred_id+'_'+str(i)+'.pdb')
+        os.mkdirs(binder_outdir) #Makes parent dirs also
+    unrelaxed_pdb_path = os.path.join(binder_outdir, step_num+'_'+str(i)+'.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
         f.write(unrelaxed_pdb)
 
