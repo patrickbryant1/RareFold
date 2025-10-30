@@ -421,7 +421,7 @@ def jax_independent_result(prediction_result):
     return numpy_pred_result
 
 
-def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num_AAs, restype_atom_mappings):
+def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_lens, num_targets, num_AAs, restype_atom_mappings):
     """Update only the peptide batch feats that affect the prediction
     int_seq: batch_size,1,L
     residx_atom14_to_atom37: batch_size,1,L,25
@@ -431,6 +431,10 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
     atom14_atom_exists
     """
 
+    #Here, we need to replicate the binder seqs to match the batch shape
+    # Use nested list comprehension to iterate over the main list and then repeat each item
+    replicated_seqs = [sublist for sublist in seqs_list for _ in range(num_targets) ]
+    pdb.set_trace()
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
     padded_seqs = [x+[20]*(max_len-len(x)) for x in int_binder_seqs] #Index 20 is UNK
@@ -449,6 +453,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
     #Update each batch item according to the length tracker
     for i in range(len(lengths_in_batch)):
         bl = lengths_in_batch[i]
+        tl = target_lens[i]
         #Assign to target feats
         batch['target_feat'][i,:,tl:tl+bl,:] = onhot_binder_seqs[i][:bl]
         #aatype
@@ -458,6 +463,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, tl, num
         batch['residx_atom37_to_atom14'][i,:,tl:tl+bl,:] = residx_atom37_to_atom14[i][:bl]
         batch['atom37_atom_exists'][i,:,tl:tl+bl,:] = residx_atom37_mask[i][:bl]
 
+    pdb.set_trace()
     return batch
 
 def get_loss(bi, prediction_result, binder_lengths, target_lens):
@@ -798,7 +804,7 @@ def design_binder(config,
             #Update feats with binder seq
             pdb.set_trace()
             t_0 = time.time()
-            batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
+            batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_lens, num_targets, num_AAs, restype_atom_mappings)
             print('Making new feats took', np.round(time.time() - t_0,2),'s')
 
         #Predict - vmap over batch dim
