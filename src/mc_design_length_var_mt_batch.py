@@ -718,7 +718,7 @@ def design_binder(config,
         t0 = time.time()
         parallel_map(func=save_structure,
                     iter_args=np.arange(len(lengths_in_batch)),
-                    constant_args=(batch, numpy_pred_result, target_inds, pred_id, 'init', outdir),
+                    constant_args=(batch, numpy_pred_result, target_inds, predict_id, 'init', outdir),
                     max_workers=max_workers)
         print('Saving init took', np.round(time.time()-t0,2) ,'s')
 
@@ -859,7 +859,7 @@ def design_binder(config,
 
         pdb.set_trace()
 
-def save_structure(i, batch, numpy_pred_result, target_inds, pred_id, step_num, outdir):
+def save_structure(i, batch, numpy_pred_result, target_inds, predict_id, step_num, outdir):
     """Save prediction
 
     save_feats = {'aatype':batch['aatype'][0][0], 'residue_index':batch['residue_index'][0][0]}
@@ -873,7 +873,7 @@ def save_structure(i, batch, numpy_pred_result, target_inds, pred_id, step_num, 
 
     #Get target ind
     ti = target_inds[i]
-    pred_id = pred_id.split('_')[ti]
+    pred_id = predict_id.split('_')[ti]
 
     #Define the plDDT bins
     bin_width = 1.0 / 50
