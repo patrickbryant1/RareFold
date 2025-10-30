@@ -687,7 +687,7 @@ def design_binder(config,
         This means that each sequence should be distributed to n=2 targets with the same step size
         [len(x) for x in int_binder_seqs] --> [10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15]
         """
-
+        iter_time_0 = time.time()
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
@@ -742,14 +742,15 @@ def design_binder(config,
         sequence_scores['plddt'].append([*plddt])
         sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
         sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
-
-        pdb.set_trace()
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
-        #The loss is averaged across all targets
-        averaged_loss = loss_array.reshape(-1, num_targets).mean(axis=1)
+        #The loss is averaged across all targets - we can get back the individual values from the other scores
+        loss = loss.reshape(-1, num_targets).mean(axis=1)
         sequence_scores['loss'].append([*loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
+        sequence_scores['target'].append(target_inds)
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
@@ -776,7 +777,6 @@ def design_binder(config,
         int_binder_seqs = [x[0] for x in mut_seqs]
         binder_seqs = [x[1] for x in mut_seqs]
         print('Mutating sequences took', np.round(time.time() - t_0,2),'s')
-        pdb.set_trace()
         #Resample MSA or only update feats with mut_seqs
         if niter%resample_every_n==0:
             #Reload batch to resample MSA
@@ -790,12 +790,13 @@ def design_binder(config,
             #Make the batch uniform in length (according to the longest target)
             print('Making batch uniform...')
             t0 = time.time()
-            batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
+            batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_lens, num_recycles, config)
             print('Making uniform batch took', np.round(time.time()-t0,2) ,'s')
 
         else:
             print("--- Updating features ---")
             #Update feats with binder seq
+            pdb.set_trace()
             t_0 = time.time()
             batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
             print('Making new feats took', np.round(time.time() - t_0,2),'s')
@@ -835,6 +836,9 @@ def design_binder(config,
         sequence_scores['loss'].append([*loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
+        sequence_scores['target'].append(target_inds)
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
@@ -860,10 +864,7 @@ def design_binder(config,
             #Reset starting point to min
             int_binder_seqs.append(sequence_scores['int_seq'][best_inds[i]][i])
 
-        iter_time = time.time()-iter_time_0
-        sequence_scores['iter_time'].append(iter_time)
 
-        pdb.set_trace()
 
 def save_structure(i, batch, numpy_pred_result, target_inds, predict_id, step_num, outdir):
     """Save prediction
