@@ -245,13 +245,15 @@ def init_features(int_binder_seq, feature_dicts, config):
 
     return new_feature_dicts
 
-def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config):
+def uniform_batch(init_feature_dicts, pep_lens, target_lens, num_recycles, config):
     """Make the batch uniform
     """
 
     #Get max sizes
     tot_lens = [len(x['int_seq']) for x in init_feature_dicts]
     max_tot_len = max(tot_lens)
+
+    pdb.set_trace()
 
     #The batch size here is the number of examples in init_feature_dicts
     batch_size = len(init_feature_dicts)
@@ -299,11 +301,12 @@ def uniform_batch(init_feature_dicts, pep_lens, target_len, num_recycles, config
         batch['msa_feat'][i,:,:,:tl,:] = feats_i['msa_feat']
         batch['target_feat'][i,:,:tl,:] = feats_i['target_feat']
         #Lengths
-        batch['target_length'][i,:,:] = target_len
+        batch['target_length'][i,:,:] = target_lens[i]
         batch['binder_length'][i,:,:] = pep_lens[i]
         batch['total_length'][i,:,:] = tl
         if config.model.embeddings_and_evoformer.cyclic_offset==True:
             batch['cyclic_offset'][i,:,:tl,:tl] = feats_i['cyclic_offset']
+            pdb.set_trace()
 
     batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
     batch['num_iter_recycling'][:] = num_recycles
@@ -689,19 +692,20 @@ def design_binder(config,
         #Make feature dicts
         print("--- Running init_features in parallel ---")
         t0 = time.time()
-        #This will return [target 1, .., target_n] x len(int_binder_seqs)
+        #This will return [target 1, .., target_n] x len(int_binder_seqs) --> needs to be flattened
         init_feature_dicts = parallel_map(func=init_features,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
-
+        #Flatten
+        init_feature_dicts = [item for sublist in init_feature_dicts for item in sublist]
         print('Init feats took',np.round(time.time()-t0,2),'s')
 
         pdb.set_trace()
         #Make the batch uniform in length (according to the longest target)
         print('Making batch uniform...')
         t0 = time.time()
-        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_lens, num_recycles, config)
         print('Making uniform batch took', np.round(time.time()-t0,2),'s')
 
         print('Predicting init...')
