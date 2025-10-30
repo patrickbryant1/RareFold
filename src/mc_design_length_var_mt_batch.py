@@ -433,7 +433,7 @@ def update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_
 
     #Here, we need to replicate the binder seqs to match the batch shape
     # Use nested list comprehension to iterate over the main list and then repeat each item
-    replicated_seqs = [sublist for sublist in seqs_list for _ in range(num_targets) ]
+    replicated_seqs = [sublist for sublist in int_binder_seqs for _ in range(num_targets) ]
     pdb.set_trace()
     #Pad the int binder seqs - this is essential for batched mapping
     max_len = max(lengths_in_batch)
@@ -634,19 +634,18 @@ def design_binder(config,
         print('--- Run exists, continuing... ---')
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
-            if col!='iteration':
+            if col not in ['iteration', 'iter_time']:
                 sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
             else:
                 sequence_scores[col] = [*score_df[col].values]
 
         #Reset starting point to min
-        pdb.set_trace()
         best_inds = np.argmin(sequence_scores['loss'],axis=0)
         int_binder_seqs, lengths_in_batch = [], []
         for i in range(len(best_inds)):
             seq_i = sequence_scores['int_seq'][best_inds[i]][i]
             int_binder_seqs.append(seq_i)
-            lengths_in_batch.append(len(seq_i))
+            lengths_in_batch.extend([len(seq_i)]*batch_size*num_targets)
 
         #Make feature dicts
         print("--- Running init_features in parallel ---")
@@ -655,10 +654,12 @@ def design_binder(config,
                                 iter_args=int_binder_seqs,
                                 constant_args=(MSA_feats, config),
                                 max_workers=max_workers)
+        #Flatten
+        init_feature_dicts = [item for sublist in init_feature_dicts for item in sublist]
         print('Init feats took', np.round(time.time()-t0,2) ,'s')
         print('Making batch uniform...')
         t0 = time.time()
-        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
+        batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_lens, num_recycles, config)
         print('Making uniform batch took', np.round(time.time()-t0,2) ,'s')
 
     else:

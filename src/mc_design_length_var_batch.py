@@ -647,7 +647,7 @@ def design_binder(config,
         print('--- Run exists, continuing... ---')
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
-            if col!='iteration':
+            if col not in ['iteration', 'iter_time']
                 sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
             else:
                 sequence_scores[col] = [*score_df[col].values]
