@@ -128,6 +128,6 @@ https://zenodo.org/records/17071355
 Unfortunately the entire train data with MSAs is too large to share through zenodo. This repo mainly contains predictions and metrics.
 
 # The EvoBind ecosystem
-[EvoBind](https://github.com/patrickbryant1/EvoBind) - designs novel [cyclic] peptide binders based **only on a protein target sequence**.
+[EvoBind](https://github.com/patrickbryant1/EvoBind) - designs novel [cyclic] peptide binders based **only on a protein target sequence**. \
 [RareFold](https://github.com/patrickbryant1/RareFold) - prediction & design with noncanonical amino acids \
 [RareFoldGPCR](https://github.com/patrickbryant1/RareFoldGPCR) - GPCR agonist design with noncanonical amino acids
