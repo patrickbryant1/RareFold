@@ -26,6 +26,7 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
         * [Step-by-Step Time Savings](#step-by-step-time-savings)
 7.  [Citation](#citation)
 8.  [Data](#data)
+9. [The EvoBind ecosystem](#the-evobind-ecosystem)
 
 ---
 
@@ -125,3 +126,8 @@ Li Q, Daumiller D, Zuo F, Marcotte H, Pan-Hammarstrom Q and Bryant P. RareFold: 
 https://zenodo.org/records/17071355
 
 Unfortunately the entire train data with MSAs is too large to share through zenodo. This repo mainly contains predictions and metrics.
+
+# The EvoBind ecosystem
+[EvoBind](https://github.com/patrickbryant1/EvoBind) - designs novel [cyclic] peptide binders based **only on a protein target sequence**.
+[RareFold](https://github.com/patrickbryant1/RareFold) - prediction & design with noncanonical amino acids \
+[RareFoldGPCR](https://github.com/patrickbryant1/RareFoldGPCR) - GPCR agonist design with noncanonical amino acids
