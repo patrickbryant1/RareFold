@@ -320,14 +320,14 @@ class RareFold(hk.Module):
           'prev_msa_first_row': ret['representations']['msa_first_row'],
           'prev_pair': ret['representations']['pair'],
       }
-      return jax.tree_map(jax.lax.stop_gradient, new_prev)
+      return jax.tree_util.tree_map(jax.lax.stop_gradient, new_prev)
 
     def do_call(prev,
                 recycle_idx,
                 compute_loss=compute_loss):
       num_ensemble = batch_size
       ensembled_batch = batch
-      non_ensembled_batch = jax.tree_map(lambda x: x, prev)
+      non_ensembled_batch = jax.tree_util.tree_map(lambda x: x, prev)
 
       return impl(
           ensembled_batch=ensembled_batch,
