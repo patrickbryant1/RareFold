@@ -36,7 +36,7 @@ def _expand_axes(axes, values, name='sharded_apply'):
   flat_axes = jax.api_util.flatten_axes(name, values_tree_def, axes)
   # Replace None's with PROXY
   flat_axes = [PROXY if x is None else x for x in flat_axes]
-  return jax.tree_unflatten(values_tree_def, flat_axes)
+  return jax.tree_util.tree_unflatten(values_tree_def, flat_axes)
 
 
 def sharded_map(
