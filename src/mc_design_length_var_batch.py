@@ -648,7 +648,10 @@ def design_binder(config,
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
             if col not in ['iteration', 'iter_time']:
-                sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
+                try:
+                    sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
+                except:
+                    pdb.set_trace()
             else:
                 sequence_scores[col] = [*score_df[col].values]
 
@@ -830,7 +833,7 @@ def design_binder(config,
         sequence_scores['inter_clash_frac'].append([float(x) for x in inter_clash_fracs])
         sequence_scores['intra_clash_frac'].append([float(x) for x in intra_clash_fracs])
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
-        sequence_scores['loss'].append([*loss])
+        sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
         print('Adding metrics took', np.round(time.time() - t_0,2),'s')
