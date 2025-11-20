@@ -858,7 +858,6 @@ def design_binder(config,
         iter_time = time.time()-iter_time_0
         sequence_scores['iter_time'].append(iter_time)
         #Save
-        pdb.set_trace()
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
 
