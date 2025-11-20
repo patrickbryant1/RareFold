@@ -678,6 +678,7 @@ def design_binder(config,
         print('--- Initialising sequences ---')
         #Initialize weights - these are the amino acid probabilities
         #Also returns the peptide_sequence corresponding to the weights
+        iter_time_0 = time.time()
         t0 = time.time()
         init_binder_seqs = parallel_map(func=initialize_weights,
                                 iter_args=binder_lengths,
@@ -745,6 +746,8 @@ def design_binder(config,
         sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
@@ -830,9 +833,6 @@ def design_binder(config,
         sequence_scores['loss'].append([*loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
-        #Save
-        score_df = pd.DataFrame.from_dict(sequence_scores)
-        score_df.to_csv(outdir+'metrics.csv', index=None)
         print('Adding metrics took', np.round(time.time() - t_0,2),'s')
 
         #Print some stats
@@ -857,6 +857,12 @@ def design_binder(config,
 
         iter_time = time.time()-iter_time_0
         sequence_scores['iter_time'].append(iter_time)
+        #Save
+        pdb.set_trace()
+        score_df = pd.DataFrame.from_dict(sequence_scores)
+        score_df.to_csv(outdir+'metrics.csv', index=None)
+
+
 
 def save_structure(i, batch, numpy_pred_result, pred_id, outdir):
     """Save prediction
