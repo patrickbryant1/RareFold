@@ -454,6 +454,7 @@ def design_binder(config,
                         'loss':[],
                         'sequence':[],
                         'int_seq':[],
+                        'iter_time':[]
                         }
 
     #check if previous run exists
@@ -461,11 +462,8 @@ def design_binder(config,
         print('Run exists, continuing...')
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
-            if col!='iteration':
-                try:
-                    sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
-                except:
-                    pdb.set_trace()
+            if col not in ['iteration', 'iter_time']:
+                sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
             else:
                 sequence_scores[col] = [*score_df[col].values]
 
@@ -498,7 +496,7 @@ def design_binder(config,
         batch['num_iter_recycling'] = np.zeros((batch_size, 1,))
         batch['num_iter_recycling'][:] = num_recycles
 
-
+        iter_time_0 = time.time()
         print('Predicting init...')
         t0 = time.time()
         prediction_result = vmap_apply_fwd(params, rng, batch)
@@ -525,6 +523,8 @@ def design_binder(config,
         sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
@@ -537,6 +537,7 @@ def design_binder(config,
     #Iterate - mutate - score - repeat
     for niter in range(len(sequence_scores['iteration']), num_iterations+1):
         #Can't prefetch - dependent on the previous iter
+        iter_time_0 = time.time()
         #Mutate sequence
         t_0 = time.time()
         mut_seqs = [mutate_sequence(int_binder_seqs[i], np.array(sequence_scores['int_seq'])[:,i], all_AA_triplets, selected_AA_index) for i in range(batch_size)]
@@ -587,9 +588,6 @@ def design_binder(config,
         sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
-        #Save
-        score_df = pd.DataFrame.from_dict(sequence_scores)
-        score_df.to_csv(outdir+'metrics.csv', index=None)
 
         print(niter, np.round(plddt[0],2), np.round(if_dist_binder[0], 2), np.round(inter_clash_fracs[0], 2), np.round(intra_clash_fracs[0], 2), np.round(loss[0], 3), binder_seqs[0])
         #Reset starting point to min
@@ -609,6 +607,12 @@ def design_binder(config,
 
 
         print('Adding metrics took', time.time() - t_0,'s')
+
+        iter_time = time.time()-iter_time_0
+        sequence_scores['iter_time'].append(iter_time)
+        #Save
+        score_df = pd.DataFrame.from_dict(sequence_scores)
+        score_df.to_csv(outdir+'metrics.csv', index=None)
 
 def save_structure(batch, prediction_result, i, pred_id, outdir):
     """Save prediction
