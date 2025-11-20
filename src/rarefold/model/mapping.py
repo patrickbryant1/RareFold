@@ -101,7 +101,8 @@ def sharded_apply(
   if shard_size is None:
     return fun
 
-  @jax.util.wraps(fun, docstr=docstr)
+  #@jax.util.wraps(fun, docstr=docstr)
+  @functools.wraps(fun)
   def mapped_fn(*args):
     # Expand in axes and Determine Loop range
     in_axes_ = _expand_axes(in_axes, args)
