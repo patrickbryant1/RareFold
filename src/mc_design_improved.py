@@ -208,7 +208,7 @@ def initialize_weights(binder_length, rare_AAs, batch_size):
         weights = np.array([np.exp(weights[i])/np.sum(np.exp(weights[i])) for i in range(len(weights))])
 
         #Get the peptide sequence
-        onehot_binder_seqs.append([selected_AA_index[x] for x in np.argmax(weights,axis=1)])
+        onehot_binder_seqs.append([int(selected_AA_index[x]) for x in np.argmax(weights,axis=1)])
         binder_seqs.append('-'.join(all_AAs[onehot_binder_seqs[-1]]))
 
     return binder_seqs, onehot_binder_seqs, all_AAs, selected_AA_index
@@ -229,7 +229,7 @@ def mutate_sequence(onehot_binder_seq, searched_seqs, all_AA_triplets, selected_
             #Get restype
             for aa in np.random.choice(selected_AA_index,len(selected_AA_index), replace=False):
                 new_seq = copy.deepcopy(seed)
-                new_seq = new_seq[:pi]+[aa]+new_seq[pi+1:]
+                new_seq = new_seq[:pi]+[int(aa)]+new_seq[pi+1:]
                 if new_seq in searched_seqs:
                     continue
                 else:
@@ -462,7 +462,10 @@ def design_binder(config,
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
             if col!='iteration':
-                sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
+                try:
+                    sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
+                except:
+                    pdb.set_trace()
             else:
                 sequence_scores[col] = [*score_df[col].values]
 
@@ -514,18 +517,18 @@ def design_binder(config,
         intra_clash_fracs = np.array([x[3] for x in iter_loss_metrics])
         #Add to scores
         sequence_scores['iteration'].append('init')
-        sequence_scores['if_dist_binder'].append([*if_dist_binder])
-        sequence_scores['plddt'].append([*plddt])
-        sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
-        sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
+        sequence_scores['if_dist_binder'].append([float(x) for x in if_dist_binder])
+        sequence_scores['plddt'].append([float(x) for x in plddt])
+        sequence_scores['inter_clash_frac'].append([float(x) for x in inter_clash_fracs])
+        sequence_scores['intra_clash_frac'].append([float(x) for x in intra_clash_fracs])
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
-        sequence_scores['loss'].append([*loss])
+        sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
         #Save
         score_df = pd.DataFrame.from_dict(sequence_scores)
         score_df.to_csv(outdir+'metrics.csv', index=None)
-
+        pdb.set_trace()
 
     #Get restype atom mappings - will be used to update the peptide feats each iteration
     #These are index-based, following the same order as in resiue_constants (used for the int_seq)
