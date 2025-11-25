@@ -324,7 +324,7 @@ def initialize_weights(binder_length, batch_size, all_AA_triplets, selected_AA_i
         weights = np.array([np.exp(weights[i])/np.sum(np.exp(weights[i])) for i in range(len(weights))])
 
         #Get the peptide sequence
-        onehot_binder_seqs.append([selected_AA_index[x] for x in np.argmax(weights,axis=1)])
+        onehot_binder_seqs.append([int(selected_AA_index[x]) for x in np.argmax(weights,axis=1)])
         binder_seqs.append('-'.join(all_AA_triplets[onehot_binder_seqs[-1]]))
 
     return binder_seqs, onehot_binder_seqs
@@ -349,7 +349,7 @@ def mutate_sequence(bi, onehot_binder_seqs, searched_seqs_all, all_AA_triplets, 
             #Get restype
             for aa in np.random.choice(selected_AA_index,len(selected_AA_index), replace=False):
                 new_seq = copy.deepcopy(seed)
-                new_seq = new_seq[:pi]+[aa]+new_seq[pi+1:]
+                new_seq = new_seq[:pi]+[int(aa)]+new_seq[pi+1:]
                 if new_seq in searched_seqs:
                     continue
                 else:
@@ -744,14 +744,14 @@ def design_binder(config,
         intra_clash_fracs = np.array([x[3] for x in iter_loss_metrics])
         #Add to scores
         sequence_scores['iteration'].append('init')
-        sequence_scores['if_dist_binder'].append([*if_dist_binder])
-        sequence_scores['plddt'].append([*plddt])
-        sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
-        sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
+        sequence_scores['if_dist_binder'].append([float(x) for x in if_dist_binder])
+        sequence_scores['plddt'].append([float(x) for x in plddt])
+        sequence_scores['inter_clash_frac'].append([float(x) for x in inter_clash_fracs])
+        sequence_scores['intra_clash_frac'].append([float(x) for x in intra_clash_fracs])
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
         #The loss is averaged across all targets - we can get back the individual values from the other scores
         loss = loss.reshape(-1, num_targets).mean(axis=1)
-        sequence_scores['loss'].append([*loss])
+        sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
         sequence_scores['target'].append(target_inds)
@@ -833,14 +833,14 @@ def design_binder(config,
 
         #Add to scores
         sequence_scores['iteration'].append(str(niter))
-        sequence_scores['if_dist_binder'].append([*if_dist_binder])
-        sequence_scores['plddt'].append([*plddt])
-        sequence_scores['inter_clash_frac'].append([*inter_clash_fracs])
-        sequence_scores['intra_clash_frac'].append([*intra_clash_fracs])
+        sequence_scores['if_dist_binder'].append([float(x) for x in if_dist_binder])
+        sequence_scores['plddt'].append([float(x) for x in plddt])
+        sequence_scores['inter_clash_frac'].append([float(x) for x in inter_clash_fracs])
+        sequence_scores['intra_clash_frac'].append([float(x) for x in intra_clash_fracs])
         loss = if_dist_binder*1/plddt+inter_clash_fracs+intra_clash_fracs
         #The loss is averaged across all targets - we can get back the individual values from the other scores
         loss = loss.reshape(-1, num_targets).mean(axis=1)
-        sequence_scores['loss'].append([*loss])
+        sequence_scores['loss'].append([float(x) for x in loss])
         sequence_scores['sequence'].append(binder_seqs)
         sequence_scores['int_seq'].append(int_binder_seqs)
         sequence_scores['target'].append(target_inds)
