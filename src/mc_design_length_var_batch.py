@@ -63,7 +63,6 @@ parser.add_argument('--MSA_feats', nargs=1, type= str, default=sys.stdin, help =
 parser.add_argument('--num_recycles', nargs=1, type= int, default=sys.stdin, help = 'Number of recycles.')
 parser.add_argument('--binder_lengths', nargs=1, type= str, default=sys.stdin, help = 'Length of binders (e.g. 10,11,12,...).')
 parser.add_argument('--num_iterations', nargs=1, type= int, default=sys.stdin, help = 'Number of iterations to run.')
-parser.add_argument('--resample_every_n', nargs=1, type= int, default=sys.stdin, help = 'How often to resample the MSA - avoids local minima.')
 parser.add_argument('--batch_size', nargs=1, type= int, default=sys.stdin, help = 'Batch size per length (will run design threads in parallel).')
 parser.add_argument('--params', nargs=1, type= str, default=sys.stdin, help = 'Params to use.')
 parser.add_argument('--rare_AAs', nargs=1, type= str, default=sys.stdin, help = 'List of rare amino acids to use in the design.')
@@ -561,7 +560,6 @@ def design_binder(config,
                 num_recycles=3,
                 binder_lengths=[10],
                 num_iterations=1000,
-                resample_every_n=100,
                 batch_size=1,
                 params=None,
                 rare_AAs=['MSE'],
@@ -778,28 +776,11 @@ def design_binder(config,
         binder_seqs = [x[1] for x in mut_seqs]
         print('Mutating sequences took', np.round(time.time() - t_0,2),'s')
 
-        #Resample MSA or only update feats with mut_seqs
-        if niter%resample_every_n==0:
-            #Reload batch to resample MSA
-            print("--- Resampling MSA ---")
-            t0 = time.time()
-            init_feature_dicts = parallel_map(func=init_features,
-                                    iter_args=int_binder_seqs,
-                                    constant_args=(MSA_feats, config),
-                                    max_workers=max_workers)
-            print('Resampling MSA took',time.time()-t0,'s')
-            #Make the batch uniform in length (according to the longest target)
-            print('Making batch uniform...')
-            t0 = time.time()
-            batch = uniform_batch(init_feature_dicts, lengths_in_batch, target_length, num_recycles, config)
-            print('Making uniform batch took', np.round(time.time()-t0,2) ,'s')
-
-        else:
-            print("--- Updating features ---")
-            #Update feats with binder seq
-            t_0 = time.time()
-            batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
-            print('Making new feats took', np.round(time.time() - t_0,2),'s')
+        print("--- Updating features ---")
+        #Update feats with binder seq
+        t_0 = time.time()
+        batch = update_peptide_batch_feats(batch, int_binder_seqs, lengths_in_batch, target_length, num_AAs, restype_atom_mappings)
+        print('Making new feats took', np.round(time.time() - t_0,2),'s')
 
         #Predict - vmap over batch dim
         print('Predicting...')
@@ -912,7 +893,6 @@ MSA_feats = np.load(args.MSA_feats[0], allow_pickle=True)
 num_recycles = args.num_recycles[0]
 binder_lengths = [int(x) for x in args.binder_lengths[0].split(',')]
 num_iterations = args.num_iterations[0]
-resample_every_n = args.resample_every_n[0]
 batch_size = args.batch_size[0]
 params = args.params[0]
 rare_AAs = args.rare_AAs[0].split(',')
@@ -935,7 +915,6 @@ design_binder(config.CONFIG,
             num_recycles=num_recycles,
             binder_lengths=binder_lengths,
             num_iterations=num_iterations,
-            resample_every_n=resample_every_n,
             batch_size=batch_size,
             params=params,
             rare_AAs=rare_AAs,

@@ -19,7 +19,7 @@ fi
 MAX_RECYCLES=3 #max_recycles - increase if low plDDT
 BINDER_LENGTHS="10,11,12,13,14,15"
 NITER=1000
-RESAMPLE_FREQ=100 #How often to resample the MSA
+#RESAMPLE_FREQ=100 #How often to resample the MSA
 BATCH_SIZE=5 #The batch size determines how many design threads are run simultaneously
 PARAMS=$BASE/data/params/finetuned_params25000.npy
 RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threeletter code for the NCAA you want to use for design
@@ -54,7 +54,6 @@ python3 $BASE/src/mc_design_length_var_batch.py --predict_id $ID \
 --num_recycles $MAX_RECYCLES \
 --binder_lengths $BINDER_LENGTHS \
 --num_iterations $NITER \
---resample_every_n $RESAMPLE_FREQ \
 --batch_size $BATCH_SIZE \
 --params $PARAMS \
 --rare_AAs $RARE_AAS \
