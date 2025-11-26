@@ -575,8 +575,9 @@ def design_binder(config,
     print('Number of workers set for CPU parallel calls', max_workers)
 
     #Update the MSA_feats with custom
-    if custom_resnos:
-        pdb.set_trace()
+    if len(custom_resnos)>0:
+        MSA_feats['residue_index'] = custom_resnos
+        print('Using custom residue index', custom_resnos)
 
     #Get mappings
     all_AA_triplets = np.array([*residue_constants.restype_name_to_atom14_names.keys()])
@@ -908,7 +909,7 @@ max_workers = args.max_workers[0]
 try:
     custom_resnos = np.load(args.custom_resnos[0])
 except:
-    custom_resnos = None
+    custom_resnos = np.array([])
 outdir = args.outdir[0]
 
 
