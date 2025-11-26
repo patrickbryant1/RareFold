@@ -68,6 +68,7 @@ parser.add_argument('--params', nargs=1, type= str, default=sys.stdin, help = 'P
 parser.add_argument('--rare_AAs', nargs=1, type= str, default=sys.stdin, help = 'List of rare amino acids to use in the design.')
 parser.add_argument('--cyclic_offset', nargs=1, type= str, default=sys.stdin, help = 'Use a cyclic offset for the binder (True) or not (False).')
 parser.add_argument('--max_workers', nargs=1, type= int, default=sys.stdin, help = 'Number of CPU threads.')
+parser.add_argument('--custom_resnos', nargs=1, type= str, default=sys.stdin, help = 'Custom residue index.')
 parser.add_argument('--outdir', nargs=1, type= str, default=sys.stdin, help = 'Path to output directory. Include /in end')
 
 ##############FUNCTIONS##############
@@ -564,6 +565,7 @@ def design_binder(config,
                 params=None,
                 rare_AAs=['MSE'],
                 max_workers=None,
+                custom_resnos=None,
                 outdir=None):
     """Design a binder
     """
@@ -571,6 +573,10 @@ def design_binder(config,
     #Check CPUs for threading
     print('Number of available CPUs:', os.cpu_count())
     print('Number of workers set for CPU parallel calls', max_workers)
+
+    #Update the MSA_feats with custom
+    if custom_resnos:
+        pdb.set_trace()
 
     #Get mappings
     all_AA_triplets = np.array([*residue_constants.restype_name_to_atom14_names.keys()])
@@ -646,10 +652,7 @@ def design_binder(config,
         score_df = pd.read_csv(outdir+'metrics.csv')
         for col in score_df.columns:
             if col not in ['iteration', 'iter_time']:
-                try:
-                    sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
-                except:
-                    pdb.set_trace()
+                sequence_scores[col] = [literal_eval(x) for x in score_df[col].values]
             else:
                 sequence_scores[col] = [*score_df[col].values]
 
@@ -902,6 +905,10 @@ if cyclic_offset=='True':
 else:
     cyclic_offset=None
 max_workers = args.max_workers[0]
+try:
+    custom_resnos = np.load(args.custom_resnos[0])
+except:
+    custom_resnos = None
 outdir = args.outdir[0]
 
 
@@ -919,4 +926,5 @@ design_binder(config.CONFIG,
             params=params,
             rare_AAs=rare_AAs,
             max_workers=max_workers,
+            custom_resnos=custom_resnos,
             outdir=outdir)
