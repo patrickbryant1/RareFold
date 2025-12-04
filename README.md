@@ -9,7 +9,7 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
 
 **EvoBindRare** designs both linear and cyclic binders directly from a protein target sequence, no prior knowledge of binding sites is required. The framework enables rapid and flexible design with expanded chemical diversity through the incorporation of noncanonical amino acids. EvoBindRare has been experimentally validated for both linear and cyclic designs, achieving high-affinity binding in each case.
 
-[Read more here](https://www.biorxiv.org/content/10.1101/2025.05.19.654846v1)
+[Read more here](https://www.biorxiv.org/content/10.1101/2025.05.19.654846v2)
 
 <img src="./data/RareFold.svg"/>
 
