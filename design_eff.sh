@@ -21,7 +21,7 @@ BINDER_LENGTHS="10,11,12,13,14,15"
 NITER=1000
 #RESAMPLE_FREQ=100 #How often to resample the MSA
 BATCH_SIZE=5 #The batch size determines how many design threads are run simultaneously
-PARAMS=$BASE/data/params/finetuned_params25000.npy
+PARAMS=$BASE/data/params/params50000.npy
 RARE_AAS="MSE,MLY,PTR,SEP,TPO,MLZ,ALY,HIC,HYP,M3L,PFF,MHO" #Specify the threeletter code for the NCAA you want to use for design
 #You can also design with the regular AAs by specifying e.g. only ALA (only the NCAAs will be added onto the regular for design)
 #All possible AAs:

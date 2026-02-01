@@ -32,10 +32,11 @@ MSE, TPO, MLY, CME, PTR, SEP,SAH, CSO, PCA, KCX, CAS, CSD, MLZ, OCS, ALY, CSS, C
 
 # LICENSE
 RareFold is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).  \
-The RareFold parameters for prediction are made available under the terms of the [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/legalcode). \
-The design protocol EvoBindRare and the parameters for design are made available under the terms of the [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
+The RareFold parameters for prediction and design are made available under the terms of the [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
 
 **You may not use these files except in compliance with the licenses.**
+
+Contact the authors for commercial use and licensing.
 
 # Colab
 It is possible to run EvoBindRare online in the [Google colab here](https://colab.research.google.com/github/patrickbryant1/RareFold/blob/main/rarefold.ipynb)

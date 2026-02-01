@@ -8,14 +8,10 @@ pip install -q --no-warn-conflicts 'jax[cuda12_pip]'==0.4.35 -f https://storage.
 conda deactivate
 
 ## Get network parameters for RareFold (a few minutes)
-#RareFold
-ZENODO=https://zenodo.org/records/17071355/files
-wget $ZENODO/params20000.npy
+#RareFold + EvoBindRare params
+wget https://zenodo.org/records/18420884/files/params50000.npy
 mkdir data/params
-mv params20000.npy  data/params/
-#EvoBindRare
-wget $ZENODO/finetuned_params25000.npy
-mv finetuned_params25000.npy data/params/
+mv params50000.npy data/params/
 
 wait
 ## Get Uniclust30 (10-20 minutes depending on bandwidth)
